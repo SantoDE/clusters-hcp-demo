@@ -1,0 +1,4 @@
+defaultNamespace: capi-demo
+dependsOn:
+  - name: clusters-hcp-demo-fleet-capi-kubevirt
+  - name: clusters-hcp-demo-fleet-capi-k3s

@@ -1,0 +1,167 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: capi-demo
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: k3s-kubevirt
+  namespace: capi-demo
+spec:
+  clusterNetwork:
+    pods:
+      cidrBlocks:
+        - 10.244.0.0/16
+    services:
+      cidrBlocks:
+        - 10.96.0.0/12
+  controlPlaneRef:
+    apiVersion: controlplane.cluster.x-k8s.io/v1beta2
+    kind: KThreesControlPlane
+    name: k3s-kubevirt-cp
+    namespace: capi-demo
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+    kind: KubevirtCluster
+    name: k3s-kubevirt
+    namespace: capi-demo
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+kind: KubevirtCluster
+metadata:
+  name: k3s-kubevirt
+  namespace: capi-demo
+spec:
+  controlPlaneServiceTemplate:
+    spec:
+      type: NodePort
+---
+apiVersion: controlplane.cluster.x-k8s.io/v1beta2
+kind: KThreesControlPlane
+metadata:
+  name: k3s-kubevirt-cp
+  namespace: capi-demo
+spec:
+  replicas: 1
+  version: v1.30.0+k3s1
+  machineTemplate:
+    infrastructureRef:
+      apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+      kind: KubevirtMachineTemplate
+      name: k3s-kubevirt-cp
+      namespace: capi-demo
+  kthreesConfigSpec:
+    serverConfig:
+      disableComponents:
+        - servicelb
+        - traefik
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+kind: KubevirtMachineTemplate
+metadata:
+  name: k3s-kubevirt-cp
+  namespace: capi-demo
+spec:
+  template:
+    spec:
+      virtualMachineBootstrapCheck:
+        checkStrategy: none
+      virtualMachineTemplate:
+        spec:
+          runStrategy: Always
+          template:
+            spec:
+              domain:
+                cpu:
+                  cores: 2
+                memory:
+                  guest: 4Gi
+                devices:
+                  disks:
+                    - name: containervolume
+                      disk:
+                        bus: virtio
+                  interfaces:
+                    - name: default
+                      masquerade: {}
+              volumes:
+                - name: containervolume
+                  containerDisk:
+                    image: quay.io/containerdisks/ubuntu:22.04
+              networks:
+                - name: default
+                  pod: {}
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: MachineDeployment
+metadata:
+  name: k3s-kubevirt-md-0
+  namespace: capi-demo
+spec:
+  clusterName: k3s-kubevirt
+  replicas: 1
+  selector:
+    matchLabels: null
+  template:
+    spec:
+      clusterName: k3s-kubevirt
+      version: v1.30.0+k3s1
+      bootstrap:
+        configRef:
+          apiVersion: bootstrap.cluster.x-k8s.io/v1beta2
+          kind: KThreesConfigTemplate
+          name: k3s-kubevirt-md-0
+          namespace: capi-demo
+      infrastructureRef:
+        apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+        kind: KubevirtMachineTemplate
+        name: k3s-kubevirt-md-0
+        namespace: capi-demo
+---
+apiVersion: bootstrap.cluster.x-k8s.io/v1beta2
+kind: KThreesConfigTemplate
+metadata:
+  name: k3s-kubevirt-md-0
+  namespace: capi-demo
+spec:
+  template:
+    spec:
+      agentConfig: {}
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+kind: KubevirtMachineTemplate
+metadata:
+  name: k3s-kubevirt-md-0
+  namespace: capi-demo
+spec:
+  template:
+    spec:
+      virtualMachineBootstrapCheck:
+        checkStrategy: none
+      virtualMachineTemplate:
+        spec:
+          runStrategy: Always
+          template:
+            spec:
+              domain:
+                cpu:
+                  cores: 2
+                memory:
+                  guest: 2Gi
+                devices:
+                  disks:
+                    - name: containervolume
+                      disk:
+                        bus: virtio
+                  interfaces:
+                    - name: default
+                      masquerade: {}
+              volumes:
+                - name: containervolume
+                  containerDisk:
+                    image: quay.io/containerdisks/ubuntu:22.04
+              networks:
+                - name: default
+                  pod: {}
