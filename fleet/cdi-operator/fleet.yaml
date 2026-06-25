@@ -1,1 +1,13 @@
 defaultNamespace: cdi
+diff:
+  comparePatches:
+    - apiVersion: admissionregistration.k8s.io/v1
+      kind: MutatingWebhookConfiguration
+      operations:
+        - op: remove
+          path: /webhooks
+    - apiVersion: admissionregistration.k8s.io/v1
+      kind: ValidatingWebhookConfiguration
+      operations:
+        - op: remove
+          path: /webhooks
