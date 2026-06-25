@@ -9,5 +9,10 @@ spec:
   paths:
     - fleet/kubevirt-operator
     - fleet/kubevirt-cr
+    - fleet/kamaji
+    - fleet/capi-kubevirt
+    - fleet/capi-kamaji
+    - fleet/capi-k3s
+    - fleet/k3k
   targets:
     - clusterSelector: {}

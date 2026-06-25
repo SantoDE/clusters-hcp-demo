@@ -1,0 +1,3 @@
+defaultNamespace: capkv-system
+dependsOn:
+  - name: clusters-hcp-demo-fleet-kubevirt-operator

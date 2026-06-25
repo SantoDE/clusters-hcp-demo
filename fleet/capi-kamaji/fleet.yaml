@@ -1,0 +1,7 @@
+defaultNamespace: kamaji-system
+dependsOn:
+  - name: clusters-hcp-demo-fleet-kamaji
+helm:
+  repo: https://clastix.github.io/charts
+  chart: cluster-api-control-plane-provider-kamaji
+  releaseName: capi-kamaji

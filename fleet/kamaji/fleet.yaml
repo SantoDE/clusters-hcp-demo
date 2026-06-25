@@ -1,0 +1,5 @@
+defaultNamespace: kamaji-system
+helm:
+  repo: https://clastix.github.io/charts
+  chart: kamaji
+  releaseName: kamaji
