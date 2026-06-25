@@ -73,6 +73,19 @@ spec:
       virtualMachineTemplate:
         spec:
           runStrategy: Always
+          dataVolumeTemplates:
+            - metadata:
+                name: boot
+              spec:
+                pvc:
+                  accessModes:
+                    - ReadWriteOnce
+                  resources:
+                    requests:
+                      storage: 30Gi
+                source:
+                  registry:
+                    url: docker://quay.io/containerdisks/ubuntu:22.04
           template:
             spec:
               domain:
@@ -82,16 +95,16 @@ spec:
                   guest: 4Gi
                 devices:
                   disks:
-                    - name: containervolume
+                    - name: boot
                       disk:
                         bus: virtio
                   interfaces:
                     - name: default
                       masquerade: {}
               volumes:
-                - name: containervolume
-                  containerDisk:
-                    image: quay.io/containerdisks/ubuntu:22.04
+                - name: boot
+                  dataVolume:
+                    name: boot
               networks:
                 - name: default
                   pod: {}
@@ -145,6 +158,19 @@ spec:
       virtualMachineTemplate:
         spec:
           runStrategy: Always
+          dataVolumeTemplates:
+            - metadata:
+                name: boot
+              spec:
+                pvc:
+                  accessModes:
+                    - ReadWriteOnce
+                  resources:
+                    requests:
+                      storage: 20Gi
+                source:
+                  registry:
+                    url: docker://quay.io/containerdisks/ubuntu:22.04
           template:
             spec:
               domain:
@@ -154,16 +180,16 @@ spec:
                   guest: 2Gi
                 devices:
                   disks:
-                    - name: containervolume
+                    - name: boot
                       disk:
                         bus: virtio
                   interfaces:
                     - name: default
                       masquerade: {}
               volumes:
-                - name: containervolume
-                  containerDisk:
-                    image: quay.io/containerdisks/ubuntu:22.04
+                - name: boot
+                  dataVolume:
+                    name: boot
               networks:
                 - name: default
                   pod: {}
