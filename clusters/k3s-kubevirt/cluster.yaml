@@ -65,10 +65,7 @@ spec:
           [Resolve]
           DNS=8.8.8.8
           FallbackDNS=8.8.4.4
-    agentConfig:
-      cloudProviderName: ""
     serverConfig:
-      cloudProviderName: ""
       disableCloudController: false
       disableComponents:
         - servicelb
@@ -167,8 +164,7 @@ spec:
             [Resolve]
             DNS=8.8.8.8
             FallbackDNS=8.8.4.4
-      agentConfig:
-        cloudProviderName: ""
+      agentConfig: {}
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
 kind: KubevirtMachineTemplate
