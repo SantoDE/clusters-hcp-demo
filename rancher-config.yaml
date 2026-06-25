@@ -1,0 +1,18 @@
+role: cluster-init
+server: https://51.195.5.176:6443
+
+restore:
+  enabled: false
+
+rancher:
+  values:
+    hostname: rancher.manuelzapf.io
+    replicas: 1
+    ingress:
+      tls:
+        source: letsEncrypt
+    letsEncrypt:
+      email: hosting@example.com
+      environment: production   # or: staging (for testing)
+      ingress:
+        class: traefik

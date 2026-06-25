@@ -1,0 +1,12 @@
+apiVersion: fleet.cattle.io/v1alpha1
+kind: GitRepo
+metadata:
+  name: clusters-hcp-demo
+  namespace: fleet-local
+spec:
+  repo: FLEET_REPO_PLACEHOLDER
+  branch: main
+  paths:
+    - fleet/kubevirt
+  targets:
+    - clusterSelector: {}
