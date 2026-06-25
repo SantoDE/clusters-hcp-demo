@@ -7,6 +7,7 @@ spec:
   repo: FLEET_REPO_PLACEHOLDER
   branch: main
   paths:
+    - fleet/rancher-settings
     - fleet/cdi-operator
     - fleet/cdi-cr
     - fleet/kubevirt-operator
