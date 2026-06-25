@@ -1,5 +1,1 @@
 defaultNamespace: capi-k3s-system
-helm:
-  repo: https://cluster-api-provider-k3s.github.io/cluster-api-k3s/
-  chart: cluster-api-k3s
-  releaseName: capi-k3s
