@@ -61,6 +61,7 @@ spec:
       cloudProviderName: ""
     serverConfig:
       cloudProviderName: ""
+      disableCloudController: false
       disableComponents:
         - servicelb
         - traefik
