@@ -1,0 +1,3 @@
+defaultNamespace: kubevirt
+dependsOn:
+  - name: clusters-hcp-demo-fleet-kubevirt-operator
