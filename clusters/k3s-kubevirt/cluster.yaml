@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: capi-demo
+  name: capi-k3s-kubevirt
   labels:
     cluster-api.cattle.io/rancher-auto-import: "true"
 ---
@@ -10,7 +10,7 @@ apiVersion: cluster.x-k8s.io/v1beta1
 kind: Cluster
 metadata:
   name: k3s-kubevirt
-  namespace: capi-demo
+  namespace: capi-k3s-kubevirt
 spec:
   clusterNetwork:
     pods:
@@ -23,18 +23,18 @@ spec:
     apiVersion: controlplane.cluster.x-k8s.io/v1beta2
     kind: KThreesControlPlane
     name: k3s-kubevirt-cp
-    namespace: capi-demo
+    namespace: capi-k3s-kubevirt
   infrastructureRef:
     apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
     kind: KubevirtCluster
     name: k3s-kubevirt
-    namespace: capi-demo
+    namespace: capi-k3s-kubevirt
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
 kind: KubevirtCluster
 metadata:
   name: k3s-kubevirt
-  namespace: capi-demo
+  namespace: capi-k3s-kubevirt
 spec:
   controlPlaneServiceTemplate:
     spec:
@@ -44,7 +44,7 @@ apiVersion: controlplane.cluster.x-k8s.io/v1beta2
 kind: KThreesControlPlane
 metadata:
   name: k3s-kubevirt-cp
-  namespace: capi-demo
+  namespace: capi-k3s-kubevirt
 spec:
   replicas: 1
   version: v1.30.0+k3s1
@@ -53,7 +53,7 @@ spec:
       apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
       kind: KubevirtMachineTemplate
       name: k3s-kubevirt-cp
-      namespace: capi-demo
+      namespace: capi-k3s-kubevirt
   kthreesConfigSpec:
     serverConfig:
       disableComponents:
@@ -64,7 +64,7 @@ apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
 kind: KubevirtMachineTemplate
 metadata:
   name: k3s-kubevirt-cp
-  namespace: capi-demo
+  namespace: capi-k3s-kubevirt
 spec:
   template:
     spec:
@@ -113,7 +113,7 @@ apiVersion: cluster.x-k8s.io/v1beta1
 kind: MachineDeployment
 metadata:
   name: k3s-kubevirt-md-0
-  namespace: capi-demo
+  namespace: capi-k3s-kubevirt
 spec:
   clusterName: k3s-kubevirt
   replicas: 1
@@ -128,18 +128,18 @@ spec:
           apiVersion: bootstrap.cluster.x-k8s.io/v1beta2
           kind: KThreesConfigTemplate
           name: k3s-kubevirt-md-0
-          namespace: capi-demo
+          namespace: capi-k3s-kubevirt
       infrastructureRef:
         apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
         kind: KubevirtMachineTemplate
         name: k3s-kubevirt-md-0
-        namespace: capi-demo
+        namespace: capi-k3s-kubevirt
 ---
 apiVersion: bootstrap.cluster.x-k8s.io/v1beta2
 kind: KThreesConfigTemplate
 metadata:
   name: k3s-kubevirt-md-0
-  namespace: capi-demo
+  namespace: capi-k3s-kubevirt
 spec:
   template:
     spec:
@@ -149,7 +149,7 @@ apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
 kind: KubevirtMachineTemplate
 metadata:
   name: k3s-kubevirt-md-0
-  namespace: capi-demo
+  namespace: capi-k3s-kubevirt
 spec:
   template:
     spec:
