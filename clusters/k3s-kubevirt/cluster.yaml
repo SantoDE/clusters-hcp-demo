@@ -55,6 +55,8 @@ spec:
       name: k3s-kubevirt-cp
       namespace: capi-k3s-kubevirt
   kthreesConfigSpec:
+    preK3sCommands:
+      - "sed -i '/cloud-provider=external/d' /etc/rancher/k3s/config.yaml 2>/dev/null || true"
     serverConfig:
       disableComponents:
         - servicelb
@@ -143,6 +145,8 @@ metadata:
 spec:
   template:
     spec:
+      preK3sCommands:
+        - "sed -i '/cloud-provider=external/d' /etc/rancher/k3s/config.yaml 2>/dev/null || true"
       agentConfig: {}
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
