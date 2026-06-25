@@ -57,6 +57,14 @@ spec:
   kthreesConfigSpec:
     preK3sCommands:
       - "sed -i '/cloud-provider=external/d' /etc/rancher/k3s/config.yaml 2>/dev/null || true"
+    files:
+      - path: /etc/systemd/resolved.conf.d/dns.conf
+        owner: root:root
+        permissions: "0644"
+        content: |
+          [Resolve]
+          DNS=8.8.8.8
+          FallbackDNS=8.8.4.4
     agentConfig:
       cloudProviderName: ""
     serverConfig:
@@ -151,6 +159,14 @@ spec:
     spec:
       preK3sCommands:
         - "sed -i '/cloud-provider=external/d' /etc/rancher/k3s/config.yaml 2>/dev/null || true"
+      files:
+        - path: /etc/systemd/resolved.conf.d/dns.conf
+          owner: root:root
+          permissions: "0644"
+          content: |
+            [Resolve]
+            DNS=8.8.8.8
+            FallbackDNS=8.8.4.4
       agentConfig:
         cloudProviderName: ""
 ---
