@@ -1,4 +1,6 @@
 defaultNamespace: cdi
+helm:
+  forceAdopt: true
 diff:
   comparePatches:
     - apiVersion: admissionregistration.k8s.io/v1
