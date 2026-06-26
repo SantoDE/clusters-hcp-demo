@@ -56,7 +56,7 @@ spec:
       namespace: capi-k3s-kubevirt
   kthreesConfigSpec:
     preK3sCommands:
-      - "sed -i '/cloud-provider=external/d' /etc/rancher/k3s/config.yaml 2>/dev/null || true"
+      - "sed -i '/cloud-provider=external/d; /^kubelet-arg:$/d; /^kube-controller-manager-arg:$/d' /etc/rancher/k3s/config.yaml 2>/dev/null || true"
     files:
       - path: /etc/systemd/resolved.conf.d/dns.conf
         owner: root:root
@@ -155,7 +155,7 @@ spec:
   template:
     spec:
       preK3sCommands:
-        - "sed -i '/cloud-provider=external/d' /etc/rancher/k3s/config.yaml 2>/dev/null || true"
+        - "sed -i '/cloud-provider=external/d; /^kubelet-arg:$/d; /^kube-controller-manager-arg:$/d' /etc/rancher/k3s/config.yaml 2>/dev/null || true"
       files:
         - path: /etc/systemd/resolved.conf.d/dns.conf
           owner: root:root
