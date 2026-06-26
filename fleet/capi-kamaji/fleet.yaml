@@ -1,3 +1,26 @@
 defaultNamespace: kamaji-system
 dependsOn:
   - name: clusters-hcp-demo-fleet-kamaji
+diff:
+  comparePatches:
+    - apiVersion: rbac.authorization.k8s.io/v1
+      kind: ClusterRole
+      name: capi-kamaji-capi-kamaji-control-plane-role
+      jsonPointers:
+        - /metadata/labels
+    - apiVersion: rbac.authorization.k8s.io/v1
+      kind: ClusterRoleBinding
+      name: capi-kamaji-capi-kamaji-control-plane-rolebinding
+      jsonPointers:
+        - /metadata/labels
+    - apiVersion: rbac.authorization.k8s.io/v1
+      kind: ClusterRoleBinding
+      name: capi-kamaji-manager-rolebinding
+      jsonPointers:
+        - /metadata/labels
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: capi-kamaji-controller-manager
+      namespace: kamaji-system
+      jsonPointers:
+        - /metadata/labels
