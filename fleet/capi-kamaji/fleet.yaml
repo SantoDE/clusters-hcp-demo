@@ -24,3 +24,21 @@ diff:
       namespace: kamaji-system
       jsonPointers:
         - /metadata/labels
+    - apiVersion: rbac.authorization.k8s.io/v1
+      kind: Role
+      name: capi-kamaji-leader-election-role
+      namespace: kamaji-system
+      jsonPointers:
+        - /metadata/labels
+    - apiVersion: rbac.authorization.k8s.io/v1
+      kind: RoleBinding
+      name: capi-kamaji-leader-election-rolebinding
+      namespace: kamaji-system
+      jsonPointers:
+        - /metadata/labels
+    - apiVersion: v1
+      kind: ServiceAccount
+      name: capi-kamaji-controller-manager
+      namespace: kamaji-system
+      jsonPointers:
+        - /metadata/labels
