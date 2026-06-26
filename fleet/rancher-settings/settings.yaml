@@ -3,3 +3,9 @@ kind: Setting
 metadata:
   name: cacerts
 value: ""
+---
+apiVersion: management.cattle.io/v3
+kind: Setting
+metadata:
+  name: agent-tls-mode
+value: "system-store"
