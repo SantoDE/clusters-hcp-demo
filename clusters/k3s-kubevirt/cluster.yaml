@@ -87,7 +87,7 @@ spec:
                     - ReadWriteOnce
                   resources:
                     requests:
-                      storage: 30Gi
+                      storage: 40Gi
                 source:
                   registry:
                     url: docker://quay.io/containerdisks/ubuntu:22.04
@@ -95,9 +95,9 @@ spec:
             spec:
               domain:
                 cpu:
-                  cores: 2
+                  cores: 4
                 memory:
-                  guest: 4Gi
+                  guest: 6Gi
                 devices:
                   disks:
                     - name: boot
