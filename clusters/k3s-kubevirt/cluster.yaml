@@ -55,19 +55,9 @@ spec:
       name: k3s-kubevirt-cp
       namespace: capi-k3s-kubevirt
   kthreesConfigSpec:
-    files:
-      - path: /etc/netplan/99-dns.yaml
-        owner: root:root
-        permissions: "0600"
-        content: |
-          network:
-            version: 2
-            ethernets:
-              enp1s0:
-                nameservers:
-                  addresses: [8.8.8.8, 8.8.4.4]
     preK3sCommands:
-      - "netplan apply 2>/dev/null || true"
+      - "resolvectl dns enp1s0 8.8.8.8 8.8.4.4 || true"
+      - "until nslookup get.k3s.io >/dev/null 2>&1; do sleep 1; done"
       - "sed -i '/cloud-provider=external/d; /^kubelet-arg:$/d; /^kube-controller-manager-arg:$/d' /etc/rancher/k3s/config.yaml 2>/dev/null || true"
     serverConfig:
       disableCloudController: false
@@ -158,19 +148,9 @@ metadata:
 spec:
   template:
     spec:
-      files:
-        - path: /etc/netplan/99-dns.yaml
-          owner: root:root
-          permissions: "0600"
-          content: |
-            network:
-              version: 2
-              ethernets:
-                enp1s0:
-                  nameservers:
-                    addresses: [8.8.8.8, 8.8.4.4]
       preK3sCommands:
-        - "netplan apply 2>/dev/null || true"
+        - "resolvectl dns enp1s0 8.8.8.8 8.8.4.4 || true"
+        - "until nslookup get.k3s.io >/dev/null 2>&1; do sleep 1; done"
         - "sed -i '/cloud-provider=external/d; /^kubelet-arg:$/d; /^kube-controller-manager-arg:$/d' /etc/rancher/k3s/config.yaml 2>/dev/null || true"
       agentConfig: {}
 ---
