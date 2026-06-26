@@ -56,15 +56,8 @@ spec:
       namespace: capi-k3s-kubevirt
   kthreesConfigSpec:
     preK3sCommands:
+      - "unlink /etc/resolv.conf 2>/dev/null || true; printf 'nameserver 8.8.8.8\\nnameserver 8.8.4.4\\n' > /etc/resolv.conf"
       - "sed -i '/cloud-provider=external/d; /^kubelet-arg:$/d; /^kube-controller-manager-arg:$/d' /etc/rancher/k3s/config.yaml 2>/dev/null || true"
-    files:
-      - path: /etc/systemd/resolved.conf.d/dns.conf
-        owner: root:root
-        permissions: "0644"
-        content: |
-          [Resolve]
-          DNS=8.8.8.8
-          FallbackDNS=8.8.4.4
     serverConfig:
       disableCloudController: false
       disableComponents:
@@ -155,15 +148,8 @@ spec:
   template:
     spec:
       preK3sCommands:
+        - "unlink /etc/resolv.conf 2>/dev/null || true; printf 'nameserver 8.8.8.8\\nnameserver 8.8.4.4\\n' > /etc/resolv.conf"
         - "sed -i '/cloud-provider=external/d; /^kubelet-arg:$/d; /^kube-controller-manager-arg:$/d' /etc/rancher/k3s/config.yaml 2>/dev/null || true"
-      files:
-        - path: /etc/systemd/resolved.conf.d/dns.conf
-          owner: root:root
-          permissions: "0644"
-          content: |
-            [Resolve]
-            DNS=8.8.8.8
-            FallbackDNS=8.8.4.4
       agentConfig: {}
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
