@@ -47,7 +47,7 @@ metadata:
   namespace: capi-k3s-kubevirt
 spec:
   replicas: 1
-  version: v1.30.0+k3s1
+  version: v1.35.5+k3s1
   machineTemplate:
     infrastructureRef:
       apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
@@ -59,11 +59,14 @@ spec:
       - "resolvectl dns enp1s0 8.8.8.8 8.8.4.4 || true"
       - "until nslookup get.k3s.io >/dev/null 2>&1; do sleep 1; done"
       - "sed -i '/cloud-provider=external/d; /^kubelet-arg:$/d; /^kube-controller-manager-arg:$/d' /etc/rancher/k3s/config.yaml 2>/dev/null || true"
+      - "IP=$(awk '/^tls-san:/{found=1;next} found && /^-/{print $2;exit}' /etc/rancher/k3s/config.yaml); [ -n \"$IP\" ] && echo \"advertise-address: $IP\" >> /etc/rancher/k3s/config.yaml || true"
     serverConfig:
       disableCloudController: false
       disableComponents:
         - servicelb
         - traefik
+      clusterCidr: "10.244.0.0/16"
+      serviceCidr: "10.96.0.0/12"
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
 kind: KubevirtMachineTemplate
@@ -134,7 +137,7 @@ spec:
   template:
     spec:
       clusterName: k3s-kubevirt
-      version: v1.30.0+k3s1
+      version: v1.35.5+k3s1
       bootstrap:
         configRef:
           apiVersion: bootstrap.cluster.x-k8s.io/v1beta2
@@ -193,7 +196,7 @@ spec:
                 cpu:
                   cores: 2
                 memory:
-                  guest: 2Gi
+                  guest: 4Gi
                 devices:
                   disks:
                     - name: boot
