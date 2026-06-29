@@ -1,4 +1,6 @@
 defaultNamespace: kamaji-system
+dependsOn:
+  - name: clusters-hcp-demo-fleet-gateway-api
 helm:
   repo: https://clastix.github.io/charts
   chart: kamaji
