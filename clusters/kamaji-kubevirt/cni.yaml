@@ -9,5 +9,5 @@ spec:
     matchLabels:
       cluster.x-k8s.io/cluster-name: kamaji-kubevirt
   resources:
-    - name: cilium-cni
+    - name: cni
       kind: ConfigMap

@@ -88,7 +88,7 @@ spec:
       infrastructureRef:
         apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
         kind: KubevirtMachineTemplate
-        name: kamaji-kubevirt-md-0
+        name: kamaji-kubevirt-md-0-v2
         namespace: capi-kamaji-kubevirt
 ---
 apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
@@ -115,6 +115,16 @@ spec:
             image-endpoint: unix:///run/containerd/containerd.sock
             timeout: 10
             debug: false
+        - path: /etc/containerd/config.toml
+          content: |
+            version = 3
+            [plugins."io.containerd.grpc.v1.cri"]
+              [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc]
+                runtime_type = "io.containerd.runc.v2"
+                [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
+                  SystemdCgroup = true
+            [plugins."io.containerd.snapshotter.v1.overlayfs"]
+              slow_chown = true
       preKubeadmCommands:
         - "resolvectl dns enp1s0 10.43.0.10 8.8.8.8 8.8.4.4 || true"
         - "resolvectl domain enp1s0 svc.cluster.local cluster.local || true"
@@ -127,8 +137,6 @@ spec:
         - "curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.35/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg"
         - "echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.35/deb/ /' > /etc/apt/sources.list.d/kubernetes.list"
         - "apt-get install -y containerd"
-        - "mkdir -p /etc/containerd && containerd config default > /etc/containerd/config.toml"
-        - "sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml"
         - "systemctl restart containerd"
         - "apt-get update -y && apt-get install -y kubelet kubeadm"
         - "apt-mark hold kubelet kubeadm"
@@ -140,7 +148,7 @@ spec:
 apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
 kind: KubevirtMachineTemplate
 metadata:
-  name: kamaji-kubevirt-md-0
+  name: kamaji-kubevirt-md-0-v2
   namespace: capi-kamaji-kubevirt
 spec:
   template:
@@ -162,7 +170,7 @@ spec:
                       storage: 20Gi
                 source:
                   registry:
-                    url: docker://quay.io/containerdisks/ubuntu:22.04
+                    url: docker://quay.io/containerdisks/ubuntu:24.04
           template:
             spec:
               domain:
