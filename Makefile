@@ -5,8 +5,10 @@ DEPLOY_PATH   ?= /usr/local/bin/ranchero
 REMOTE_CONFIG ?= config.toml
 KUBECONFIG_OUT ?= kubeconfig.yaml
 FLEET_REPO    ?= https://github.com/SantoDE/clusters-hcp-demo
+KUBECTL       ?= kubectl --context ranchero-k3s
 
-.PHONY: deploy run run-force kubeconfig fleet-apply
+.PHONY: deploy run run-force kubeconfig fleet-apply \
+        clusters-apply clusters-delete clusters-reset demo
 
 deploy:
 	scp $(BINARY) $(DEPLOY_HOST):/tmp/ranchero
@@ -33,3 +35,23 @@ kubeconfig:
 
 fleet-apply:
 	sed 's|FLEET_REPO_PLACEHOLDER|$(FLEET_REPO)|' gitrepos/local.yaml | kubectl --context ranchero-k3s apply -f -
+
+clusters-apply:
+	$(KUBECTL) apply -f clusters/k3s-kubevirt/cluster.yaml
+	$(KUBECTL) apply -f clusters/kamaji-kubevirt/cluster.yaml
+	$(KUBECTL) apply -f clusters/kamaji-kubevirt/cni-configmap.yaml
+	$(KUBECTL) apply -f clusters/kamaji-kubevirt/cni.yaml
+	$(KUBECTL) apply -f clusters/k3k/provider.yaml
+	$(KUBECTL) apply -f clusters/k3k/cluster.yaml
+
+clusters-delete:
+	$(KUBECTL) delete -f clusters/k3s-kubevirt/cluster.yaml --ignore-not-found
+	$(KUBECTL) delete -f clusters/kamaji-kubevirt/cni.yaml --ignore-not-found
+	$(KUBECTL) delete -f clusters/kamaji-kubevirt/cni-configmap.yaml --ignore-not-found
+	$(KUBECTL) delete -f clusters/kamaji-kubevirt/cluster.yaml --ignore-not-found
+	$(KUBECTL) delete -f clusters/k3k/cluster.yaml --ignore-not-found
+
+clusters-reset: clusters-delete clusters-apply
+
+demo:
+	nix run .#demo
