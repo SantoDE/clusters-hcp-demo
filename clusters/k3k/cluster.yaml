@@ -2,21 +2,40 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: k3k-simple
+  name: capi-k3k
   labels:
     cluster-api.cattle.io/rancher-auto-import: "true"
 ---
-apiVersion: k3k.io/v1beta1
+apiVersion: cluster.x-k8s.io/v1beta1
 kind: Cluster
 metadata:
-  name: simple
-  namespace: k3k-simple
+  name: k3k-simple
+  namespace: capi-k3k
 spec:
-  mode: shared
+  controlPlaneRef:
+    apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+    kind: K3kControlPlane
+    name: k3k-simple
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    kind: K3kCluster
+    name: k3k-simple
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: K3kCluster
+metadata:
+  name: k3k-simple
+  namespace: capi-k3k
+spec: {}
+---
+apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+kind: K3kControlPlane
+metadata:
+  name: k3k-simple
+  namespace: capi-k3k
+spec:
   servers: 1
-  agents: 1
   version: v1.32.6-k3s1
+  mode: shared
   clusterCIDR: 10.200.0.0/16
   serviceCIDR: 10.201.0.0/16
-  expose:
-    nodePort: {}
