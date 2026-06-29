@@ -1,3 +1,2 @@
 defaultNamespace: capi-k3s-kubevirt
-helm:
-  forceAdopt: true
+targets: []
