@@ -49,6 +49,8 @@ clusters-delete:
 	$(KUBECTL) delete -f clusters/kamaji-kubevirt/cni.yaml --ignore-not-found
 	$(KUBECTL) delete -f clusters/kamaji-kubevirt/cni-configmap.yaml --ignore-not-found
 	$(KUBECTL) delete -f clusters/kamaji-kubevirt/cluster.yaml --ignore-not-found
+	-$(KUBECTL) patch cluster k3k-simple -n capi-k3k --type=json \
+		-p='[{"op":"remove","path":"/metadata/finalizers"}]' 2>/dev/null
 	$(KUBECTL) delete -f clusters/k3k/cluster.yaml --ignore-not-found
 
 clusters-reset: clusters-delete clusters-apply
