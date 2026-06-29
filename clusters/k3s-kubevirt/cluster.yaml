@@ -5,6 +5,10 @@ metadata:
   name: capi-k3s-kubevirt
   labels:
     cluster-api.cattle.io/rancher-auto-import: "true"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    meta.helm.sh/release-name: clusters-hcp-demo-clusters-k3s-kubevirt
+    meta.helm.sh/release-namespace: capi-k3s-kubevirt
 ---
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: Cluster
