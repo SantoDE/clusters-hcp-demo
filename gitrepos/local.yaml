@@ -16,6 +16,8 @@ spec:
     - fleet/capi-kubevirt
     - fleet/capi-kamaji
     - fleet/capi-k3s
+    - fleet/capi-kubeadm-bootstrap
+    - fleet/capi-kubeadm-control-plane
     - fleet/k3k
   targets:
     - clusterSelector: {}

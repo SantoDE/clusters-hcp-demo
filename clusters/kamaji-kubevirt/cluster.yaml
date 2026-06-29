@@ -1,0 +1,158 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: capi-kamaji-kubevirt
+  labels:
+    cluster-api.cattle.io/rancher-auto-import: "true"
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: kamaji-kubevirt
+  namespace: capi-kamaji-kubevirt
+spec:
+  clusterNetwork:
+    pods:
+      cidrBlocks:
+        - 10.244.0.0/16
+    services:
+      cidrBlocks:
+        - 10.96.0.0/12
+  controlPlaneRef:
+    apiVersion: controlplane.cluster.x-k8s.io/v1alpha2
+    kind: KamajiControlPlane
+    name: kamaji-kubevirt-cp
+    namespace: capi-kamaji-kubevirt
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+    kind: KubevirtCluster
+    name: kamaji-kubevirt
+    namespace: capi-kamaji-kubevirt
+---
+# KubevirtCluster with no controlPlaneServiceTemplate — Kamaji sets the CP endpoint
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+kind: KubevirtCluster
+metadata:
+  name: kamaji-kubevirt
+  namespace: capi-kamaji-kubevirt
+spec: {}
+---
+apiVersion: controlplane.cluster.x-k8s.io/v1alpha2
+kind: KamajiControlPlane
+metadata:
+  name: kamaji-kubevirt-cp
+  namespace: capi-kamaji-kubevirt
+spec:
+  replicas: 1
+  version: "1.35.0"
+  dataStoreName: default
+  addons:
+    coreDNS: {}
+    kubeProxy: {}
+  kubelet:
+    cgroupfs: systemd
+    preferredAddressTypes:
+      - ExternalIP
+      - InternalIP
+      - Hostname
+  network:
+    serviceType: ClusterIP
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: MachineDeployment
+metadata:
+  name: kamaji-kubevirt-md-0
+  namespace: capi-kamaji-kubevirt
+spec:
+  clusterName: kamaji-kubevirt
+  replicas: 1
+  selector:
+    matchLabels: null
+  template:
+    spec:
+      clusterName: kamaji-kubevirt
+      version: v1.35.0
+      bootstrap:
+        configRef:
+          apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+          kind: KubeadmConfigTemplate
+          name: kamaji-kubevirt-md-0
+          namespace: capi-kamaji-kubevirt
+      infrastructureRef:
+        apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+        kind: KubevirtMachineTemplate
+        name: kamaji-kubevirt-md-0
+        namespace: capi-kamaji-kubevirt
+---
+apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+kind: KubeadmConfigTemplate
+metadata:
+  name: kamaji-kubevirt-md-0
+  namespace: capi-kamaji-kubevirt
+spec:
+  template:
+    spec:
+      preKubeadmCommands:
+        - "resolvectl dns enp1s0 8.8.8.8 8.8.4.4 || true"
+        - "until nslookup k8s.io >/dev/null 2>&1; do sleep 1; done"
+      joinConfiguration:
+        nodeRegistration:
+          kubeletExtraArgs:
+            cloud-provider: ""
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha1
+kind: KubevirtMachineTemplate
+metadata:
+  name: kamaji-kubevirt-md-0
+  namespace: capi-kamaji-kubevirt
+spec:
+  template:
+    spec:
+      virtualMachineBootstrapCheck:
+        checkStrategy: none
+      virtualMachineTemplate:
+        spec:
+          runStrategy: Always
+          dataVolumeTemplates:
+            - metadata:
+                name: boot
+              spec:
+                pvc:
+                  accessModes:
+                    - ReadWriteOnce
+                  resources:
+                    requests:
+                      storage: 20Gi
+                source:
+                  registry:
+                    url: docker://quay.io/containerdisks/ubuntu:22.04
+          template:
+            spec:
+              domain:
+                cpu:
+                  cores: 2
+                memory:
+                  guest: 4Gi
+                devices:
+                  disks:
+                    - name: boot
+                      disk:
+                        bus: virtio
+                  interfaces:
+                    - name: default
+                      masquerade: {}
+                      ports:
+                        - name: ssh
+                          port: 22
+                          protocol: TCP
+                        - name: kubelet
+                          port: 10250
+                          protocol: TCP
+              volumes:
+                - name: boot
+                  dataVolume:
+                    name: boot
+              networks:
+                - name: default
+                  pod: {}

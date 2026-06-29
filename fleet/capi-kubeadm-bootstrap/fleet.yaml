@@ -1,9 +1,6 @@
-defaultNamespace: kamaji-system
-helm:
-  repo: https://clastix.github.io/charts
-  chart: kamaji
-  version: "26.3.2-edge"
-  releaseName: kamaji
+defaultNamespace: capi-kubeadm-bootstrap-system
+dependsOn:
+  - name: clusters-hcp-demo-fleet-capi-kubevirt
 diff:
   comparePatches:
     - apiVersion: admissionregistration.k8s.io/v1
