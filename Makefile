@@ -6,15 +6,23 @@ REMOTE_CONFIG ?= config.toml
 KUBECONFIG_OUT ?= kubeconfig.yaml
 FLEET_REPO    ?= https://github.com/SantoDE/clusters-hcp-demo
 
-.PHONY: deploy run kubeconfig fleet-apply
+.PHONY: deploy run run-force kubeconfig fleet-apply
 
 deploy:
 	scp $(BINARY) $(DEPLOY_HOST):/tmp/ranchero
 	ssh $(DEPLOY_HOST) "sudo mv /tmp/ranchero $(DEPLOY_PATH) && sudo chmod +x $(DEPLOY_PATH)"
 
 run:
-	scp rancher-config.yaml $(DEPLOY_HOST):~/rancher-config.yaml
+	scp rancher-config.yaml $(DEPLOY_HOST):~/$(REMOTE_CONFIG)
 	ssh $(DEPLOY_HOST) "sudo ranchero --config $(REMOTE_CONFIG)"
+	$(MAKE) kubeconfig
+	$(MAKE) fleet-apply
+
+run-force:
+	scp rancher-config.yaml $(DEPLOY_HOST):~/$(REMOTE_CONFIG)
+	ssh $(DEPLOY_HOST) "sudo ranchero --config $(REMOTE_CONFIG) --force"
+	$(MAKE) kubeconfig
+	$(MAKE) fleet-apply
 
 kubeconfig:
 	ssh $(DEPLOY_HOST) "sudo cat /etc/rancher/k3s/k3s.yaml" | sed 's|https://127.0.0.1|https://$(DEPLOY_IP)|g' > $(KUBECONFIG_OUT)

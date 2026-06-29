@@ -2,7 +2,7 @@ defaultNamespace: kamaji-system
 helm:
   repo: https://clastix.github.io/charts
   chart: kamaji
-  version: "26.3.2-edge"
+  version: "0.0.0+latest"
   releaseName: kamaji
 diff:
   comparePatches:

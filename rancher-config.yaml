@@ -1,6 +1,9 @@
 role: cluster-init
 server: https://51.195.5.176:6443
 
+k3s:
+  version: v1.35.5+k3s1
+
 restore:
   enabled: false
 
@@ -12,7 +15,7 @@ rancher:
       tls:
         source: letsEncrypt
     letsEncrypt:
-      email: hosting@example.com
+      email: me@manuelzapf.io
       environment: production   # or: staging (for testing)
       ingress:
         class: traefik
