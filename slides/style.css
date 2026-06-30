@@ -1,5 +1,13 @@
-/* Fix architecture diagrams in longtext-left slides — contain shows the full SVG */
-.slide-img-right,
-.slide-img-left {
+/* Fix architecture SVG diagrams — contain shows the full diagram without cropping */
+.diagram-slide .slide-img-right {
   object-fit: contain !important;
+}
+
+/* Wider green box for agenda slide, image repositioned to match */
+.agenda-slide .text-box-left {
+  width: 58% !important;
+}
+.agenda-slide .slide-img-right {
+  left: 60% !important;
+  max-width: 38% !important;
 }

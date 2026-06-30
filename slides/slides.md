@@ -11,6 +11,157 @@ image: /examples/taskboard_3.jpg
 layout: default
 ---
 
+<div class="about-card">
+<div class="about-grid">
+  <div class="about-left">
+    <div class="photo-frame">
+      <img :src="'/Manuel_Solingen_g.png'" class="about-photo" />
+    </div>
+    <div class="about-name">Manuel Zapf</div>
+    <div class="about-title">Principal Solution Architect</div>
+    <ul class="about-bio">
+      <li>Traefik Maintainer</li>
+      <li>Dapr Meteor</li>
+      <li>Proud dad</li>
+      <li>A bit too much into Handball</li>
+      <li>Previously: Traefik Labs, Solo.io</li>
+    </ul>
+  </div>
+  <div class="about-right">
+    <div class="skills-title">Skills &amp; Tools</div>
+    <div class="skills-tags">
+      <span class="tag">Kubernetes</span>
+      <span class="tag">Cloud Native Development</span>
+      <span class="tag">API Gateways</span>
+      <span class="tag">Service Meshes</span>
+      <span class="tag">Architecture</span>
+    </div>
+    <div class="social-links">
+      <div class="social-link">
+        <span class="social-icon social-x">𝕏</span>
+        <span>https://x.com/manuel_zapf</span>
+      </div>
+      <div class="social-link">
+        <span class="social-icon social-li">in</span>
+        <span>https://www.linkedin.com/in/manuel-zapf-374a4869/</span>
+      </div>
+      <div class="social-link">
+        <span class="social-icon social-gh">GH</span>
+        <span>https://github.com/SantoDE</span>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<style>
+.about-card {
+  background: #f0f0f0;
+  border-radius: 8px;
+  padding: 1.5rem 2rem;
+  height: 88%;
+  display: flex;
+  align-items: stretch;
+}
+.about-grid {
+  display: grid;
+  grid-template-columns: 40% 56%;
+  gap: 4%;
+  width: 100%;
+  align-items: start;
+}
+.about-left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.photo-frame {
+  width: 200px;
+  height: 200px;
+  margin-bottom: 0.6rem;
+}
+.about-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+}
+.about-name {
+  font-size: 1.4rem;
+  font-weight: 900;
+  font-style: italic;
+  line-height: 1.2;
+}
+.about-title {
+  font-size: 1rem;
+  font-style: italic;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+  color: #444;
+}
+.about-bio {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+.about-bio li::before {
+  content: '●';
+  color: var(--slidev-theme-primary);
+  margin-right: 0.5rem;
+}
+.skills-title {
+  font-size: 1.3rem;
+  font-weight: 800;
+  margin-bottom: 0.75rem;
+}
+.skills-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+.tag {
+  border: 2px solid var(--slidev-theme-primary);
+  border-radius: 4px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.social-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.social-link {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.8rem;
+}
+.social-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 6px;
+  font-weight: 900;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+.social-x   { background: #000; color: #fff; }
+.social-li  { background: #0a66c2; color: #fff; font-size: 0.85rem; }
+.social-gh  { background: #24292f; color: #fff; font-size: 0.65rem; font-weight: 900; letter-spacing: 0; }
+</style>
+
+---
+layout: longtext-left
+image: /Falcon_Heavy_Demo_Mission_(39337245145).jpg
+class: agenda-slide
+---
+
 # Agenda
 
 1. **The Multi-Tenancy Challenge** — why shared clusters hit limits
@@ -59,7 +210,7 @@ layout: boxes-green-3
 ## 🏢 Enterprise
 "I need my own upgrades. I need more control. I need MOAR"
 
----on
+---
 layout: boxes-green-3
 ---
 
@@ -119,6 +270,7 @@ layout: default
 ---
 layout: longtext-left
 image: /diagrams/namespaces.svg
+class: diagram-slide
 ---
 
 # Namespaces
@@ -135,11 +287,12 @@ image: /diagrams/namespaces.svg
 ---
 layout: longtext-left
 image: /diagrams/vcluster.svg
+class: diagram-slide
 ---
 
 # Virtual Clusters
 
-**e.g. vCluster**
+**e.g. k3k · vCluster**
 
 ✅ Separate Kubernetes API per tenant  
 ✅ Fast provisioning  
@@ -151,11 +304,12 @@ image: /diagrams/vcluster.svg
 ---
 layout: longtext-left
 image: /diagrams/hosted-cp.svg
+class: diagram-slide
 ---
 
 # Hosted Control Planes
 
-**e.g. Kamaji · k3k · HyperShift**
+**e.g. Kamaji · HyperShift**
 
 ✅ Dedicated control plane per tenant (runs as Pods)  
 ✅ Independent lifecycle — upgrade without coordination  
@@ -167,11 +321,12 @@ image: /diagrams/hosted-cp.svg
 ---
 layout: longtext-left
 image: /diagrams/dedicated.svg
+class: diagram-slide
 ---
 
 # Dedicated Clusters
 
-**e.g. Cluster API · KubeVirt · Bare Metal**
+**e.g. Cloud Managed · Bare Metal**
 
 ✅ Complete isolation — control plane and workers  
 ✅ Full lifecycle independence  
@@ -196,7 +351,7 @@ layout: default
 |---|---|---|---|---|
 | Namespaces | ★☆☆☆☆ | $ | ★★★★★ | Internal teams |
 | Virtual Clusters | ★★★☆☆ | $$ | ★★★★☆ | Dev environments |
-| Hosted Control Planes | ★★★★☆ | $$$ | ★★★☆☆ | SaaS, edge |
+| Hosted Control Planes | ★★★★☆ | $$$ | ★★★☆☆ | SaaS, edge, Scall |
 | Dedicated Clusters | ★★★★★ | $$$$ | ★★☆☆☆ | Regulated, GPU |
 
 *Every model optimizes for a different trade-off.*
@@ -205,31 +360,21 @@ layout: default
 layout: default
 ---
 
-# Matching Requirements to Models
+# Choosing Your Control Plane Model
 
-| Requirement | Model |
-|---|---|
-| Internal teams | Namespaces |
-| Developer environments | vCluster |
-| Lightweight edge | k3k |
-| SaaS tenants | Kamaji |
-| OpenShift fleets | HyperShift |
-| Regulated workloads | KubeVirt |
-| Performance / GPU | Bare Metal |
-
----
-layout: section-simple
----
-
-# Live Demo
+| Requirement | Model | Examples |
+|---|---|---|
+| Internal teams, cost-sensitive | Namespaces | Native Kubernetes |
+| Developer & CI environments | Virtual Clusters | vCluster, k3k |
+| SaaS, multi-tenant platforms & Scale| Hosted Control Planes | Kamaji, k3k, HyperShift |
+| Regulated workloads, GPU, compliance | Dedicated Clusters | Any infra provider |
 
 ---
 layout: cover
 image: /examples/write_sticker_1.jpg
 ---
 
-# Three Ways to Provision Kubernetes
-## Same platform. Same API. Three different control plane architectures.
+# Live Demo
 
 ---
 layout: default
@@ -249,23 +394,17 @@ A single bare-metal k3s cluster running everything.
 
 ::box1::
 **KubeVirt**
-
 Control plane VM + Worker VMs
-
 *Dedicated Control Plane + Dedicated Workers*
 
 ::box2::
 **Kamaji + KubeVirt**
-
 Control plane Pods + Worker VMs
-
 *Hosted Control Plane + Dedicated Workers*
 
 ::box3::
 **k3k**
-
 k3s Pods + Shared workers
-
 *Hosted Control Plane + Shared Workers*
 
 ---
