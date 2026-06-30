@@ -1,0 +1,23 @@
+direction: down
+
+cluster: Kubernetes Cluster {
+  style.fill: "#f0f0f0"
+
+  cp: Shared Control Plane {
+    style.fill: "#e8c88a"
+  }
+
+  ns_a: Namespace A {
+    style.fill: "#a8d5e8"
+  }
+  ns_b: Namespace B {
+    style.fill: "#a8d5e8"
+  }
+  ns_c: Namespace C {
+    style.fill: "#a8d5e8"
+  }
+}
+
+cluster.cp -> cluster.ns_a
+cluster.cp -> cluster.ns_b
+cluster.cp -> cluster.ns_c

@@ -1,0 +1,35 @@
+direction: right
+
+namespaces: Namespaces {
+  shape: rectangle
+  style.fill: "#e8f4f8"
+  style.border-radius: 8
+  width: 220
+  height: 120
+}
+
+vcluster: Virtual Clusters {
+  shape: rectangle
+  style.fill: "#d0eaf4"
+  style.border-radius: 8
+  width: 220
+  height: 120
+}
+
+hcp: Hosted Control Planes {
+  shape: rectangle
+  style.fill: "#a8d5e8"
+  style.border-radius: 8
+  width: 220
+  height: 120
+}
+
+dedicated: Dedicated Clusters {
+  shape: rectangle
+  style.fill: "#7bbfd8"
+  style.border-radius: 8
+  width: 220
+  height: 120
+}
+
+namespaces -> vcluster -> hcp -> dedicated

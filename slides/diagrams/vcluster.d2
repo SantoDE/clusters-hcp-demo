@@ -1,0 +1,29 @@
+direction: down
+
+host: Host Cluster {
+  style.fill: "#f0f0f0"
+
+  vc1: Virtual Cluster A {
+    style.fill: "#d5e8a8"
+    cp1: API Server + etcd {
+      style.fill: "#a8d5e8"
+    }
+  }
+
+  vc2: Virtual Cluster B {
+    style.fill: "#d5e8a8"
+    cp2: API Server + etcd {
+      style.fill: "#a8d5e8"
+    }
+  }
+
+  workers: Shared Worker Nodes {
+    style.fill: "#e8f4f8"
+    n1: Node 1
+    n2: Node 2
+    n3: Node 3
+  }
+}
+
+host.vc1 -> host.workers
+host.vc2 -> host.workers

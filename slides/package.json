@@ -1,0 +1,14 @@
+{
+  "name": "hcp-demo-slides",
+  "private": true,
+  "scripts": {
+    "dev": "slidev slides.md --open --remote",
+    "build": "slidev build slides.md",
+    "export": "slidev export slides.md",
+    "diagrams": "for f in diagrams/*.d2; do d2 \"$f\" \"public/diagrams/$(basename ${f%.d2}).svg\"; done"
+  },
+  "devDependencies": {
+    "@slidev/cli": "^52.8.0",
+    "@slidev/types": "^52.8.0"
+  }
+}

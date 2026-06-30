@@ -96,6 +96,9 @@ var (
 	provisioningGVR = schema.GroupVersionResource{
 		Group: "provisioning.cattle.io", Version: "v1", Resource: "clusters",
 	}
+	managementClusterGVR = schema.GroupVersionResource{
+		Group: "management.cattle.io", Version: "v3", Resource: "clusters",
+	}
 	podGVR = schema.GroupVersionResource{
 		Version: "v1", Resource: "pods",
 	}
@@ -223,6 +226,23 @@ func (m model) pollAllCmd() tea.Cmd {
 	return tea.Batch(cmds...)
 }
 
+// toFloat64 handles the json.Number type returned by the Kubernetes unstructured
+// decoder (which uses UseNumber), as well as plain float64 from tests/mocks.
+func toFloat64(v interface{}) float64 {
+	switch n := v.(type) {
+	case float64:
+		return n
+	case int64:
+		return float64(n)
+	case int32:
+		return float64(n)
+	case interface{ Float64() (float64, error) }: // json.Number
+		f, _ := n.Float64()
+		return f
+	}
+	return 0
+}
+
 // conditionTime returns the lastTransitionTime of the first condition with the
 // given type and status "True", or nil if not found.
 func conditionTime(conditions []interface{}, condType string) *time.Time {
@@ -256,8 +276,7 @@ func (m model) pollClusterCmd(idx int, def clusterDef) tea.Cmd {
 		// CAPI cluster phase
 		obj, err := client.Resource(clusterGVR).Namespace(def.capiNS).Get(ctx, def.capiName, metav1.GetOptions{})
 		if err != nil {
-			next.phase = "Not found"
-			return pollResultMsg{idx: idx, state: next}
+			return pollResultMsg{idx: idx, state: clusterState{}}
 		}
 		status, _ := obj.Object["status"].(map[string]interface{})
 		next.phase, _ = status["phase"].(string)
@@ -307,9 +326,9 @@ func (m model) pollClusterCmd(idx int, def clusterDef) tea.Cmd {
 			mdObj, err := client.Resource(mdGVR).Namespace(def.capiNS).Get(ctx, def.mdName, metav1.GetOptions{})
 			if err == nil {
 				mdStatus, _ := mdObj.Object["status"].(map[string]interface{})
-				ready, _ := mdStatus["readyReplicas"].(float64)
+				ready := toFloat64(mdStatus["readyReplicas"])
 				if ready == 0 {
-					ready, _ = mdStatus["availableReplicas"].(float64)
+					ready = toFloat64(mdStatus["availableReplicas"])
 				}
 				next.workersReady.done = ready >= 1
 				if next.workersReady.done && next.workersReady.at == nil {
@@ -574,7 +593,7 @@ func statusLabel(s clusterState, noWorkers bool) string {
 	switch {
 	case s.startTime.IsZero():
 		e = entry{"Not started", "240"}
-	case s.rancherActive.done:
+	case s.rancherActive.done && (noWorkers || s.workersReady.done):
 		e = entry{"Active", "82"}
 	case noWorkers && s.cpReady.done:
 		e = entry{"CP Ready", "226"}
@@ -704,19 +723,29 @@ func (m model) View() string {
 		}
 
 		// overall timer
+		noWorkers := def.mdName == ""
+		allDone := s.rancherActive.done && (noWorkers || s.workersReady.done)
+		var doneAt *time.Time
+		if allDone {
+			doneAt = s.rancherActive.at
+			if !noWorkers && s.workersReady.at != nil {
+				if doneAt == nil || s.workersReady.at.After(*doneAt) {
+					doneAt = s.workersReady.at
+				}
+			}
+		}
 		var timerStr string
 		switch {
 		case s.startTime.IsZero():
 			timerStr = dimSt.Render("not started")
-		case s.rancherActive.done && s.rancherActive.at != nil:
-			elapsed := s.rancherActive.at.Sub(s.startTime).Round(time.Second)
+		case allDone && doneAt != nil:
+			elapsed := doneAt.Sub(s.startTime).Round(time.Second)
 			timerStr = doneTimeSt.Render(fmt.Sprintf("✓ %s", elapsed))
 		default:
 			timerStr = timerSt.Render(fmt.Sprintf("⏱ %s", time.Since(s.startTime).Round(time.Second)))
 		}
 
 		// milestones
-		noWorkers := def.mdName == ""
 		ms1 := msRow("CP Ready", s.cpReady, s.startTime, false)
 		ms2 := msRow("Workers Ready", s.workersReady, s.startTime, noWorkers)
 		ms3 := msRow("Rancher Active", s.rancherActive, s.startTime, false)
@@ -756,7 +785,7 @@ func (m model) View() string {
 		}
 
 		st := panelSt
-		if s.rancherActive.done {
+		if allDone {
 			st = panelDoneSt
 		}
 		panels[i] = st.Render(content)
@@ -808,16 +837,48 @@ func (m model) View() string {
 
 var jsonRemoveFinalizers = []byte(`[{"op":"remove","path":"/metadata/finalizers"}]`)
 
+func resourceIface(client dynamic.Interface, gvr schema.GroupVersionResource, ns string) dynamic.ResourceInterface {
+	if ns == "" {
+		return client.Resource(gvr)
+	}
+	return client.Resource(gvr).Namespace(ns)
+}
+
 func forceClearFinalizers(ctx context.Context, client dynamic.Interface, gvr schema.GroupVersionResource, ns, name string) {
-	obj, err := client.Resource(gvr).Namespace(ns).Get(ctx, name, metav1.GetOptions{})
+	iface := resourceIface(client, gvr, ns)
+	obj, err := iface.Get(ctx, name, metav1.GetOptions{})
 	if err != nil || len(obj.GetFinalizers()) == 0 {
 		return
 	}
-	client.Resource(gvr).Namespace(ns).Patch(ctx, name, types.JSONPatchType, jsonRemoveFinalizers, metav1.PatchOptions{}) //nolint:errcheck
+	iface.Patch(ctx, name, types.JSONPatchType, jsonRemoveFinalizers, metav1.PatchOptions{}) //nolint:errcheck
+}
+
+func findRancherCluster(ctx context.Context, client dynamic.Interface, capiName string) (provName, mgmtName string) {
+	pList, err := client.Resource(provisioningGVR).Namespace("fleet-default").List(ctx, metav1.ListOptions{})
+	if err != nil || pList == nil {
+		return
+	}
+	for _, item := range pList.Items {
+		meta, _ := item.Object["metadata"].(map[string]interface{})
+		ann, _ := meta["annotations"].(map[string]interface{})
+		if ann["provisioning.cattle.io/management-cluster-display-name"] != capiName {
+			continue
+		}
+		provName, _ = meta["name"].(string)
+		st, _ := item.Object["status"].(map[string]interface{})
+		mgmtName, _ = st["clusterName"].(string)
+		return
+	}
+	return
 }
 
 func deleteOneCluster(ctx context.Context, client dynamic.Interface, def clusterDef) {
 	nsGVR := schema.GroupVersionResource{Version: "v1", Resource: "namespaces"}
+
+	// Delete the Rancher management cluster first — if GC cascades to the provisioning
+	// cluster we get clean teardown for free; CAPI namespace follows after.
+	provName, mgmtName := findRancherCluster(ctx, client, def.capiName)
+	deleteRancherCluster(ctx, client, def.capiName, provName, mgmtName)
 
 	forceClearFinalizers(ctx, client, clusterGVR, def.capiNS, def.capiName)
 	forceClearFinalizers(ctx, client, def.cpGVR, def.capiNS, def.cpName)
@@ -837,35 +898,53 @@ func deleteOneCluster(ctx context.Context, client dynamic.Interface, def cluster
 		time.Sleep(500 * time.Millisecond)
 	}
 
-	// Clean up provider-owned namespaces that the CAPI controller would have deleted
-	// but didn't get to because finalizers were force-removed.
 	if def.extraNamespace != "" {
-		nsGVR := schema.GroupVersionResource{Version: "v1", Resource: "namespaces"}
 		client.Resource(nsGVR).Delete(ctx, def.extraNamespace, metav1.DeleteOptions{}) //nolint:errcheck
 		fmt.Printf("deleted  %s\n", def.extraNamespace)
 	}
-
-	// Clean up the Rancher provisioning/management clusters that Turtles created.
-	// When finalizers are force-removed, Turtles never gets to run its cleanup handler.
-	deleteRancherCluster(ctx, client, def.capiName)
 }
 
-func deleteRancherCluster(ctx context.Context, client dynamic.Interface, capiName string) {
-	pList, err := client.Resource(provisioningGVR).Namespace("fleet-default").List(ctx, metav1.ListOptions{})
-	if err != nil || pList == nil {
+func deleteRancherCluster(ctx context.Context, client dynamic.Interface, capiName, provName, mgmtName string) {
+	if mgmtName == "" || mgmtName == "local" {
 		return
 	}
-	for _, item := range pList.Items {
-		meta, _ := item.Object["metadata"].(map[string]interface{})
-		ann, _ := meta["annotations"].(map[string]interface{})
-		if ann["provisioning.cattle.io/management-cluster-display-name"] != capiName {
-			continue
+
+	// Strip finalizers and delete the management cluster. If owner references are in
+	// place, GC will cascade to the provisioning cluster automatically.
+	forceClearFinalizers(ctx, client, managementClusterGVR, "", mgmtName)
+	client.Resource(managementClusterGVR).Delete(ctx, mgmtName, metav1.DeleteOptions{}) //nolint:errcheck
+	fmt.Printf("deleting management/%s (%s)\n", mgmtName, capiName)
+
+	for {
+		_, err := client.Resource(managementClusterGVR).Get(ctx, mgmtName, metav1.GetOptions{})
+		if apierrors.IsNotFound(err) {
+			fmt.Printf("done:     management/%s\n", mgmtName)
+			break
 		}
-		name, _ := meta["name"].(string)
-		// Strip finalizers so deletion doesn't hang on wrangler handlers.
-		forceClearFinalizers(ctx, client, provisioningGVR, "fleet-default", name)
-		client.Resource(provisioningGVR).Namespace("fleet-default").Delete(ctx, name, metav1.DeleteOptions{}) //nolint:errcheck
-		fmt.Printf("deleted  rancher/%s (%s)\n", name, capiName)
+		forceClearFinalizers(ctx, client, managementClusterGVR, "", mgmtName)
+		time.Sleep(500 * time.Millisecond)
+	}
+
+	// Check whether GC cascaded to the provisioning cluster; if not, clean it up manually.
+	if provName == "" {
+		return
+	}
+	_, err := client.Resource(provisioningGVR).Namespace("fleet-default").Get(ctx, provName, metav1.GetOptions{})
+	if apierrors.IsNotFound(err) {
+		fmt.Printf("done:     rancher/%s (cascaded)\n", provName)
+		return
+	}
+	forceClearFinalizers(ctx, client, provisioningGVR, "fleet-default", provName)
+	client.Resource(provisioningGVR).Namespace("fleet-default").Delete(ctx, provName, metav1.DeleteOptions{}) //nolint:errcheck
+	fmt.Printf("deleting rancher/%s (%s)\n", provName, capiName)
+	for {
+		_, err := client.Resource(provisioningGVR).Namespace("fleet-default").Get(ctx, provName, metav1.GetOptions{})
+		if apierrors.IsNotFound(err) {
+			fmt.Printf("done:     rancher/%s\n", provName)
+			return
+		}
+		forceClearFinalizers(ctx, client, provisioningGVR, "fleet-default", provName)
+		time.Sleep(500 * time.Millisecond)
 	}
 }
 

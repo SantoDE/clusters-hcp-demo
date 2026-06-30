@@ -1,0 +1,5 @@
+/* Fix architecture diagrams in longtext-left slides — contain shows the full SVG */
+.slide-img-right,
+.slide-img-left {
+  object-fit: contain !important;
+}

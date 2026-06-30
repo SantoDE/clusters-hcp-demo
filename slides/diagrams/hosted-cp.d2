@@ -1,0 +1,26 @@
+grid-rows: 2
+grid-columns: 3
+
+cp1: "Control Plane A\n(Mgmt Cluster Pod)" { style.fill: "#a8d5e8" }
+cp2: "Control Plane B\n(Mgmt Cluster Pod)" { style.fill: "#a8d5e8" }
+cp3: "Control Plane C\n(Mgmt Cluster Pod)" { style.fill: "#a8d5e8" }
+
+workers_a: Worker Pool A {
+  style.fill: "#e8f4f8"
+  n1: Node 1
+  n2: Node 2
+}
+workers_b: Worker Pool B {
+  style.fill: "#e8f4f8"
+  n3: Node 3
+  n4: Node 4
+}
+workers_c: Worker Pool C {
+  style.fill: "#e8f4f8"
+  n5: Node 5
+  n6: Node 6
+}
+
+cp1 -> workers_a
+cp2 -> workers_b
+cp3 -> workers_c

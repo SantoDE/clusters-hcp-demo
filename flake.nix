@@ -43,6 +43,14 @@
             kubernetes-helm
             clusterctl
             k9s
+            nodejs_22
+          ];
+        };
+
+        devShells.slides = pkgs.mkShell {
+          buildInputs = with pkgs; [
+            nodejs_22
+            d2
           ];
         };
       });

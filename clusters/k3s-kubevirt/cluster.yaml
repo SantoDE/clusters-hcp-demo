@@ -65,7 +65,7 @@ spec:
       - "sed -i '/cloud-provider=external/d; /^kubelet-arg:$/d; /^kube-controller-manager-arg:$/d' /etc/rancher/k3s/config.yaml 2>/dev/null || true"
       - "IP=$(awk '/^tls-san:/{found=1;next} found && /^-/{print $2;exit}' /etc/rancher/k3s/config.yaml); [ -n \"$IP\" ] && echo \"advertise-address: $IP\" >> /etc/rancher/k3s/config.yaml || true"
     serverConfig:
-      disableCloudController: false
+      disableCloudController: true
       disableComponents:
         - servicelb
         - traefik

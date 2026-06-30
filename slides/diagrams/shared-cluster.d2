@@ -1,0 +1,25 @@
+direction: down
+
+cluster: Kubernetes Cluster {
+  api: API Server
+  etcd: etcd
+
+  ns_a: Namespace Team A {
+    style.fill: "#e8f4f8"
+  }
+  ns_b: Namespace Team B {
+    style.fill: "#d0eaf4"
+  }
+  ns_c: Namespace Team C {
+    style.fill: "#a8d5e8"
+  }
+  ns_d: Namespace Team D {
+    style.fill: "#7bbfd8"
+  }
+
+  api -> ns_a
+  api -> ns_b
+  api -> ns_c
+  api -> ns_d
+  api -> etcd
+}

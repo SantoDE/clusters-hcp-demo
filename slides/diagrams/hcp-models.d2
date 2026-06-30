@@ -1,0 +1,48 @@
+direction: down
+
+mgmt: Management Cluster (k3s) {
+  style.fill: "#f0f0f0"
+}
+
+kubevirt: KubeVirt {
+  cp_vm: Control Plane VM {
+    style.fill: "#7bbfd8"
+  }
+  worker_vm: Worker VM(s) {
+    style.fill: "#7bbfd8"
+  }
+  cp_vm -> worker_vm
+}
+
+kamaji: Kamaji + KubeVirt {
+  cp_pod: Control Plane Pods {
+    style.fill: "#a8d5e8"
+  }
+  worker_vm2: Worker VM(s) {
+    style.fill: "#a8d5e8"
+  }
+  cp_pod -> worker_vm2
+}
+
+k3k: k3k {
+  cp_pod2: k3s Pods {
+    style.fill: "#d0eaf4"
+  }
+  shared: Shared Workers {
+    style.fill: "#d0eaf4"
+  }
+  cp_pod2 -> shared
+}
+
+mgmt -> kubevirt
+mgmt -> kamaji
+mgmt -> k3k
+
+result: Kubernetes Cluster {
+  shape: rectangle
+  style.fill: "#e8f8e8"
+}
+
+kubevirt -> result
+kamaji -> result
+k3k -> result
