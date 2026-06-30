@@ -38,4 +38,4 @@ spec:
   version: v1.32.6-k3s1
   mode: shared
   clusterCIDR: 10.200.0.0/16
-  serviceCIDR: 10.201.0.0/16
+  serviceCIDR: 10.43.240.0/20

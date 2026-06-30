@@ -45,17 +45,7 @@ clusters-apply:
 	$(KUBECTL) apply -f clusters/k3k/cluster.yaml
 
 clusters-delete:
-	-$(KUBECTL) patch cluster k3s-kubevirt -n capi-k3s-kubevirt --type=json \
-		-p='[{"op":"remove","path":"/metadata/finalizers"}]' 2>/dev/null
-	-$(KUBECTL) patch cluster kamaji-kubevirt -n capi-kamaji-kubevirt --type=json \
-		-p='[{"op":"remove","path":"/metadata/finalizers"}]' 2>/dev/null
-	-$(KUBECTL) patch cluster k3k-simple -n capi-k3k --type=json \
-		-p='[{"op":"remove","path":"/metadata/finalizers"}]' 2>/dev/null
-	$(KUBECTL) delete -f clusters/k3s-kubevirt/cluster.yaml --ignore-not-found
-	$(KUBECTL) delete -f clusters/kamaji-kubevirt/cni.yaml --ignore-not-found
-	$(KUBECTL) delete -f clusters/kamaji-kubevirt/cni-configmap.yaml --ignore-not-found
-	$(KUBECTL) delete -f clusters/kamaji-kubevirt/cluster.yaml --ignore-not-found
-	$(KUBECTL) delete -f clusters/k3k/cluster.yaml --ignore-not-found
+	nix run .#demo -- delete
 
 clusters-reset: clusters-delete clusters-apply
 
