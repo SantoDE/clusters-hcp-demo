@@ -24,7 +24,10 @@ type clusterDef struct {
 	subtitle   string
 	capiNS     string
 	capiName   string
-	podNS      string // namespace where the interesting pods live
+	podNS      string
+	cpGVR      schema.GroupVersionResource
+	cpName     string
+	mdName     string // empty = no dedicated workers (k3k shared mode)
 	applyFiles []string
 }
 
@@ -35,6 +38,9 @@ var defs = []clusterDef{
 		capiNS:   "capi-k3s-kubevirt",
 		capiName: "k3s-kubevirt",
 		podNS:    "capi-k3s-kubevirt",
+		cpGVR:    schema.GroupVersionResource{Group: "controlplane.cluster.x-k8s.io", Version: "v1beta1", Resource: "kthreescontrolplanes"},
+		cpName:   "k3s-kubevirt-cp",
+		mdName:   "k3s-kubevirt-md-0",
 		applyFiles: []string{
 			"clusters/k3s-kubevirt/cluster.yaml",
 		},
@@ -45,6 +51,9 @@ var defs = []clusterDef{
 		capiNS:   "capi-kamaji-kubevirt",
 		capiName: "kamaji-kubevirt",
 		podNS:    "capi-kamaji-kubevirt",
+		cpGVR:    schema.GroupVersionResource{Group: "controlplane.cluster.x-k8s.io", Version: "v1alpha2", Resource: "kamajicontrolplanes"},
+		cpName:   "kamaji-kubevirt-cp",
+		mdName:   "kamaji-kubevirt-md-0",
 		applyFiles: []string{
 			"clusters/kamaji-kubevirt/cluster.yaml",
 			"clusters/kamaji-kubevirt/cni-configmap.yaml",
@@ -57,6 +66,9 @@ var defs = []clusterDef{
 		capiNS:   "capi-k3k",
 		capiName: "k3k-simple",
 		podNS:    "k3k-k3k-simple",
+		cpGVR:    schema.GroupVersionResource{Group: "controlplane.cluster.x-k8s.io", Version: "v1beta1", Resource: "k3kcontrolplanes"},
+		cpName:   "k3k-simple",
+		mdName:   "", // shared mode — no worker VMs
 		applyFiles: []string{
 			"clusters/k3k/provider.yaml",
 			"clusters/k3k/cluster.yaml",
@@ -69,6 +81,9 @@ var defs = []clusterDef{
 var (
 	clusterGVR = schema.GroupVersionResource{
 		Group: "cluster.x-k8s.io", Version: "v1beta1", Resource: "clusters",
+	}
+	mdGVR = schema.GroupVersionResource{
+		Group: "cluster.x-k8s.io", Version: "v1beta1", Resource: "machinedeployments",
 	}
 	provisioningGVR = schema.GroupVersionResource{
 		Group: "provisioning.cattle.io", Version: "v1", Resource: "clusters",
@@ -83,23 +98,35 @@ var (
 
 // ─── state ────────────────────────────────────────────────────────────────────
 
+type milestone struct {
+	done bool
+	at   *time.Time // wall time when first reached
+}
+
+func (ms *milestone) reach(prev milestone) {
+	if !prev.done && ms.done && ms.at == nil {
+		t := time.Now()
+		ms.at = &t
+	} else if prev.at != nil {
+		ms.at = prev.at
+	}
+}
+
 type podInfo struct {
 	name   string
 	status string
-	cpuM   int64
-	memMi  int64
 }
 
 type clusterState struct {
-	phase     string
-	available bool
-	rancher   bool
-	events    []string
+	phase    string
+	pods     []podInfo
+	totalCPU int64
+	totalMem int64
 	startTime time.Time
-	doneAt    *time.Time
-	pods      []podInfo
-	totalCPU  int64
-	totalMem  int64
+
+	cpReady      milestone
+	workersReady milestone
+	rancherActive milestone
 }
 
 type appPhase int
@@ -111,11 +138,11 @@ const (
 )
 
 type model struct {
-	client   dynamic.Interface
-	phase    appPhase
-	states   [3]clusterState
-	width    int
-	height   int
+	client dynamic.Interface
+	phase  appPhase
+	states [3]clusterState
+	width  int
+	height int
 }
 
 // ─── messages ─────────────────────────────────────────────────────────────────
@@ -148,11 +175,7 @@ func newModel() model {
 		fmt.Fprintf(os.Stderr, "client: %v\n", err)
 		os.Exit(1)
 	}
-	var states [3]clusterState
-	for i := range states {
-		states[i] = clusterState{events: []string{}}
-	}
-	return model{client: client, states: states}
+	return model{client: client}
 }
 
 func (m model) Init() tea.Cmd {
@@ -181,12 +204,13 @@ func (m model) pollClusterCmd(idx int, def clusterDef) tea.Cmd {
 		defer cancel()
 
 		next := clusterState{
-			events:    prev.events,
-			startTime: prev.startTime,
-			doneAt:    prev.doneAt,
+			startTime:    prev.startTime,
+			cpReady:      milestone{done: prev.cpReady.done, at: prev.cpReady.at},
+			workersReady: milestone{done: prev.workersReady.done, at: prev.workersReady.at},
+			rancherActive: milestone{done: prev.rancherActive.done, at: prev.rancherActive.at},
 		}
 
-		// CAPI cluster
+		// CAPI cluster phase
 		obj, err := client.Resource(clusterGVR).Namespace(def.capiNS).Get(ctx, def.capiName, metav1.GetOptions{})
 		if err != nil {
 			next.phase = "Not found"
@@ -197,54 +221,64 @@ func (m model) pollClusterCmd(idx int, def clusterDef) tea.Cmd {
 		if next.phase == "" {
 			next.phase = "Pending"
 		}
-		if conds, ok := status["conditions"].([]interface{}); ok {
-			for _, c := range conds {
-				cm, _ := c.(map[string]interface{})
-				if cm["type"] == "Available" && cm["status"] == "True" {
-					next.available = true
-				}
+
+		// CP ready — check status.ready or status.initialized on the CP object
+		cpObj, err := client.Resource(def.cpGVR).Namespace(def.capiNS).Get(ctx, def.cpName, metav1.GetOptions{})
+		if err == nil {
+			cpStatus, _ := cpObj.Object["status"].(map[string]interface{})
+			ready, _ := cpStatus["ready"].(bool)
+			initialized, _ := cpStatus["initialized"].(bool)
+			next.cpReady.done = ready || initialized
+		}
+		next.cpReady.reach(prev.cpReady)
+
+		// Workers ready — MachineDeployment readyReplicas >= 1
+		if def.mdName != "" {
+			mdObj, err := client.Resource(mdGVR).Namespace(def.capiNS).Get(ctx, def.mdName, metav1.GetOptions{})
+			if err == nil {
+				mdStatus, _ := mdObj.Object["status"].(map[string]interface{})
+				ready, _ := mdStatus["readyReplicas"].(int64)
+				next.workersReady.done = ready >= 1
 			}
 		}
+		next.workersReady.reach(prev.workersReady)
 
-		// Rancher provisioning cluster — match by Turtles owner annotations
-		pList, err := client.Resource(provisioningGVR).Namespace("fleet-default").List(ctx, metav1.ListOptions{})
-		if err == nil {
+		// Rancher Active — match provisioning cluster by Turtles owner annotations
+		pList, _ := client.Resource(provisioningGVR).Namespace("fleet-default").List(ctx, metav1.ListOptions{})
+		if pList != nil {
 			for _, item := range pList.Items {
-				ann, _ := item.Object["metadata"].(map[string]interface{})
-				annMap, _ := ann["annotations"].(map[string]interface{})
-				ownerNS, _ := annMap["cluster-api.cattle.io/capi-cluster-owner-namespace"].(string)
-				ownerName, _ := annMap["cluster-api.cattle.io/capi-cluster-owner-name"].(string)
-				if ownerNS == def.capiNS && ownerName == def.capiName {
+				meta, _ := item.Object["metadata"].(map[string]interface{})
+				ann, _ := meta["annotations"].(map[string]interface{})
+				if ann["cluster-api.cattle.io/capi-cluster-owner-namespace"] == def.capiNS &&
+					ann["cluster-api.cattle.io/capi-cluster-owner-name"] == def.capiName {
 					st, _ := item.Object["status"].(map[string]interface{})
-					next.rancher, _ = st["ready"].(bool)
+					next.rancherActive.done, _ = st["ready"].(bool)
 					break
 				}
 			}
 		}
+		next.rancherActive.reach(prev.rancherActive)
 
-		// pods in podNS
+		// pods + metrics
 		pods, _ := client.Resource(podGVR).Namespace(def.podNS).List(ctx, metav1.ListOptions{})
 		metrics, _ := client.Resource(metricsGVR).Namespace(def.podNS).List(ctx, metav1.ListOptions{})
 
-		metricsByPod := map[string][2]int64{} // name → [cpuMilli, memMi]
+		metricsByPod := map[string][2]int64{}
 		if metrics != nil {
-			for _, m := range metrics.Items {
-				meta, _ := m.Object["metadata"].(map[string]interface{})
+			for _, pm := range metrics.Items {
+				meta, _ := pm.Object["metadata"].(map[string]interface{})
 				podName, _ := meta["name"].(string)
-				containers, _ := m.Object["containers"].([]interface{})
 				var cpuM, memMi int64
-				for _, c := range containers {
+				for _, c := range pm.Object["containers"].([]interface{}) {
 					cm, _ := c.(map[string]interface{})
 					usage, _ := cm["usage"].(map[string]interface{})
-					if cpuStr, ok := usage["cpu"].(string); ok {
-						q, err := resource.ParseQuantity(cpuStr)
-						if err == nil {
+					if s, ok := usage["cpu"].(string); ok {
+						if q, err := resource.ParseQuantity(s); err == nil {
 							cpuM += q.MilliValue()
 						}
 					}
-					if memStr, ok := usage["memory"].(string); ok {
-						q, err := resource.ParseQuantity(memStr)
-						if err == nil {
+					if s, ok := usage["memory"].(string); ok {
+						if q, err := resource.ParseQuantity(s); err == nil {
 							memMi += q.Value() / (1024 * 1024)
 						}
 					}
@@ -252,7 +286,6 @@ func (m model) pollClusterCmd(idx int, def clusterDef) tea.Cmd {
 				metricsByPod[podName] = [2]int64{cpuM, memMi}
 			}
 		}
-
 		if pods != nil {
 			for _, pod := range pods.Items {
 				meta, _ := pod.Object["metadata"].(map[string]interface{})
@@ -260,30 +293,10 @@ func (m model) pollClusterCmd(idx int, def clusterDef) tea.Cmd {
 				podStatus, _ := pod.Object["status"].(map[string]interface{})
 				phase, _ := podStatus["phase"].(string)
 				m := metricsByPod[name]
-				next.pods = append(next.pods, podInfo{
-					name:   name,
-					status: phase,
-					cpuM:   m[0],
-					memMi:  m[1],
-				})
+				next.pods = append(next.pods, podInfo{name: name, status: phase})
 				next.totalCPU += m[0]
 				next.totalMem += m[1]
 			}
-		}
-
-		// event log on phase change
-		if prev.phase != next.phase && next.phase != "" && prev.phase != "" {
-			entry := fmt.Sprintf("%s → %s", prev.phase, next.phase)
-			next.events = append(next.events, entry)
-			if len(next.events) > 5 {
-				next.events = next.events[len(next.events)-5:]
-			}
-		}
-
-		// capture done time
-		if !prev.rancher && next.rancher {
-			t := time.Now()
-			next.doneAt = &t
 		}
 
 		return pollResultMsg{idx: idx, state: next}
@@ -294,8 +307,7 @@ func applyAllCmd() tea.Cmd {
 	return func() tea.Msg {
 		for _, def := range defs {
 			for _, f := range def.applyFiles {
-				cmd := exec.Command("kubectl", "--context", "ranchero-k3s", "apply", "-f", f)
-				cmd.Run()
+				exec.Command("kubectl", "--context", "ranchero-k3s", "apply", "-f", f).Run()
 			}
 		}
 		return applyDoneMsg{}
@@ -306,7 +318,6 @@ func applyAllCmd() tea.Cmd {
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-
 	case tea.WindowSizeMsg:
 		m.width, m.height = msg.Width, msg.Height
 
@@ -337,7 +348,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Batch(tickCmd(), m.pollAllCmd())
 
 	case applyDoneMsg:
-		return m, nil
+		// nothing; poll loop picks up state changes
 
 	case pollResultMsg:
 		m.states[msg.idx] = msg.state
@@ -371,9 +382,11 @@ var (
 	timerSt    = lipgloss.NewStyle().Foreground(lipgloss.Color("214"))
 	doneTimeSt = lipgloss.NewStyle().Foreground(lipgloss.Color("82")).Bold(true)
 	dimSt      = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
-	eventSt    = lipgloss.NewStyle().Foreground(lipgloss.Color("243"))
 	okDotSt    = lipgloss.NewStyle().Foreground(lipgloss.Color("82"))
-	podNameSt  = lipgloss.NewStyle().Foreground(lipgloss.Color("252"))
+	msSt       = lipgloss.NewStyle().Foreground(lipgloss.Color("252"))
+	msTimeSt   = lipgloss.NewStyle().Foreground(lipgloss.Color("243"))
+	naSt       = lipgloss.NewStyle().Foreground(lipgloss.Color("238")).Italic(true)
+	podNameSt  = lipgloss.NewStyle().Foreground(lipgloss.Color("250"))
 	podStatSt  = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
 	helpSt     = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
 	warnSt     = lipgloss.NewStyle().Foreground(lipgloss.Color("214")).Bold(true)
@@ -402,11 +415,24 @@ func dot(on bool) string {
 	return dimSt.Render("○")
 }
 
-func memBar(used, maxMi int64, width int) string {
-	if maxMi == 0 {
+func msRow(label string, ms milestone, start time.Time, na bool) string {
+	if na {
+		return fmt.Sprintf("%s %-16s %s", dimSt.Render("─"), msSt.Render(label), naSt.Render("N/A (shared)"))
+	}
+	d := dot(ms.done)
+	suffix := ""
+	if ms.done && ms.at != nil && !start.IsZero() {
+		elapsed := ms.at.Sub(start).Round(time.Second)
+		suffix = msTimeSt.Render(fmt.Sprintf("+%s", elapsed))
+	}
+	return fmt.Sprintf("%s %-16s %s", d, msSt.Render(label), suffix)
+}
+
+func memBar(used, maxVal int64, width int) string {
+	if maxVal == 0 {
 		return dimSt.Render(strings.Repeat("░", width))
 	}
-	fill := int(float64(used) / float64(maxMi) * float64(width))
+	fill := int(float64(used) / float64(maxVal) * float64(width))
 	if fill > width {
 		fill = width
 	}
@@ -442,83 +468,80 @@ func truncate(s string, n int) string {
 	return s[:n-1] + "…"
 }
 
+func maxInt64(vals ...int64) int64 {
+	var m int64
+	for _, v := range vals {
+		if v > m {
+			m = v
+		}
+	}
+	return m
+}
+
 // ─── view ─────────────────────────────────────────────────────────────────────
 
 func (m model) View() string {
 	panels := make([]string, 3)
 
-	// find max mem across clusters for relative bar scale
-	var maxMem int64 = 512 // floor so bar isn't empty when mem is low
-	for _, s := range m.states {
-		if s.totalMem > maxMem {
-			maxMem = s.totalMem
-		}
-	}
+	maxMem := maxInt64(512, m.states[0].totalMem, m.states[1].totalMem, m.states[2].totalMem)
+	maxCPU := maxInt64(100, m.states[0].totalCPU, m.states[1].totalCPU, m.states[2].totalCPU)
 
 	for i, def := range defs {
 		s := m.states[i]
 
-		// timer
+		// overall timer
 		var timerStr string
-		if s.startTime.IsZero() {
+		switch {
+		case s.startTime.IsZero():
 			timerStr = dimSt.Render("not started")
-		} else if s.rancher && s.doneAt != nil {
-			elapsed := s.doneAt.Sub(s.startTime).Round(time.Second)
+		case s.rancherActive.done && s.rancherActive.at != nil:
+			elapsed := s.rancherActive.at.Sub(s.startTime).Round(time.Second)
 			timerStr = doneTimeSt.Render(fmt.Sprintf("✓ %s", elapsed))
-		} else if !s.startTime.IsZero() {
-			elapsed := time.Since(s.startTime).Round(time.Second)
-			timerStr = timerSt.Render(fmt.Sprintf("⏱ %s", elapsed))
+		default:
+			timerStr = timerSt.Render(fmt.Sprintf("⏱ %s", time.Since(s.startTime).Round(time.Second)))
 		}
 
-		// phase line
-		phaseLine := fmt.Sprintf("%s  %s", phaseSt(s.phase), timerStr)
-
-		// status dots
-		dots := fmt.Sprintf("%s CAPI Available\n%s Rancher Active",
-			dot(s.available), dot(s.rancher))
+		// milestones
+		noWorkers := def.mdName == ""
+		ms1 := msRow("CP Ready", s.cpReady, s.startTime, false)
+		ms2 := msRow("Workers Ready", s.workersReady, s.startTime, noWorkers)
+		ms3 := msRow("Rancher Active", s.rancherActive, s.startTime, false)
 
 		// resource bars
 		barW := 10
+		cpuLine := fmt.Sprintf("CPU  %s  %s", memBar(s.totalCPU, maxCPU, barW), fmtCPU(s.totalCPU))
 		memLine := fmt.Sprintf("MEM  %s  %s", memBar(s.totalMem, maxMem, barW), fmtMem(s.totalMem))
-		cpuLine := fmt.Sprintf("CPU  %s  %s", memBar(s.totalCPU, max64(maxCPU(m), 100), barW), fmtCPU(s.totalCPU))
 
-		// pod list (max 6)
+		// pod list (max 5)
 		podLines := ""
 		pods := s.pods
-		if len(pods) > 6 {
-			pods = pods[:6]
+		if len(pods) > 5 {
+			pods = pods[:5]
 		}
 		for _, p := range pods {
-			name := truncate(p.name, panelW-16)
-			stat := podStatSt.Render(p.status)
-			podLines += fmt.Sprintf("%s  %s\n", podNameSt.Render(name), stat)
+			podLines += fmt.Sprintf("%s  %s\n",
+				podNameSt.Render(truncate(p.name, panelW-14)),
+				podStatSt.Render(p.status))
 		}
-		if len(s.pods) > 6 {
-			podLines += dimSt.Render(fmt.Sprintf("  … +%d more", len(s.pods)-6)) + "\n"
-		}
-
-		// event log
-		evLines := ""
-		for _, e := range s.events {
-			evLines += eventSt.Render("  "+e) + "\n"
+		if len(s.pods) > 5 {
+			podLines += dimSt.Render(fmt.Sprintf("… +%d more", len(s.pods)-5)) + "\n"
 		}
 
 		content := titleSt.Render(def.label) + "\n" +
 			subtitleSt.Render(def.subtitle) + "\n\n" +
-			phaseLine + "\n\n" +
-			dots + "\n\n" +
+			phaseSt(s.phase) + "  " + timerStr + "\n\n" +
+			ms1 + "\n" +
+			ms2 + "\n" +
+			ms3 + "\n\n" +
 			cpuLine + "\n" +
 			memLine + "\n"
 
 		if podLines != "" {
 			content += "\n" + podLines
 		}
-		if evLines != "" {
-			content += "\n" + evLines
-		}
 
 		st := panelSt
-		if s.rancher {
+		if s.rancherActive.done {
 			st = panelDoneSt
 		}
 		panels[i] = st.Render(content)
@@ -526,7 +549,6 @@ func (m model) View() string {
 
 	row := lipgloss.JoinHorizontal(lipgloss.Top, panels[0], "  ", panels[1], "  ", panels[2])
 
-	// help / confirm bar
 	var help string
 	switch m.phase {
 	case phaseIdle:
@@ -538,23 +560,6 @@ func (m model) View() string {
 	}
 
 	return "\n" + row + "\n\n" + help + "\n"
-}
-
-func maxCPU(m model) int64 {
-	var max int64 = 100
-	for _, s := range m.states {
-		if s.totalCPU > max {
-			max = s.totalCPU
-		}
-	}
-	return max
-}
-
-func max64(a, b int64) int64 {
-	if a > b {
-		return a
-	}
-	return b
 }
 
 // ─── main ─────────────────────────────────────────────────────────────────────
