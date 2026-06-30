@@ -394,21 +394,29 @@ var (
 	helpSt     = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
 	warnSt     = lipgloss.NewStyle().Foreground(lipgloss.Color("214")).Bold(true)
 
-	phaseColors = map[string]lipgloss.Color{
-		"Provisioning": "214",
-		"Provisioned":  "226",
-		"Not found":    "240",
-		"Pending":      "240",
-		"Deleting":     "196",
-	}
 )
 
-func phaseSt(phase string) string {
-	col, ok := phaseColors[phase]
-	if !ok {
-		col = "250"
+func statusLabel(s clusterState, noWorkers bool) string {
+	type entry struct {
+		label string
+		color lipgloss.Color
 	}
-	return lipgloss.NewStyle().Bold(true).Foreground(col).Render(phase)
+	var e entry
+	switch {
+	case s.startTime.IsZero():
+		e = entry{"Not started", "240"}
+	case s.rancherActive.done:
+		e = entry{"Active", "82"}
+	case noWorkers && s.cpReady.done:
+		e = entry{"CP Ready", "226"}
+	case !noWorkers && s.workersReady.done:
+		e = entry{"Workers Ready", "226"}
+	case s.cpReady.done:
+		e = entry{"Workers Joining", "214"}
+	default:
+		e = entry{"Provisioning", "214"}
+	}
+	return lipgloss.NewStyle().Bold(true).Foreground(e.color).Render(e.label)
 }
 
 func dot(on bool) string {
@@ -532,7 +540,7 @@ func (m model) View() string {
 
 		content := titleSt.Render(def.label) + "\n" +
 			subtitleSt.Render(def.subtitle) + "\n\n" +
-			phaseSt(s.phase) + "  " + timerStr + "\n\n" +
+			statusLabel(s, noWorkers) + "  " + timerStr + "\n\n" +
 			ms1 + "\n" +
 			ms2 + "\n" +
 			ms3 + "\n\n" +
