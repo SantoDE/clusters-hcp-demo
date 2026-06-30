@@ -14,6 +14,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
@@ -170,6 +171,8 @@ func newModel() model {
 		fmt.Fprintf(os.Stderr, "kubeconfig: %v\n", err)
 		os.Exit(1)
 	}
+	// suppress API deprecation warnings printed to stderr
+	cfg.WarningHandler = rest.NoWarnings{}
 	client, err := dynamic.NewForConfig(cfg)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "client: %v\n", err)
