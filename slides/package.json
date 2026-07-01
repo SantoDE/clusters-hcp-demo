@@ -8,7 +8,7 @@
     "diagrams": "for f in diagrams/*.d2; do d2 \"$f\" \"public/diagrams/$(basename ${f%.d2}).svg\"; done"
   },
   "devDependencies": {
-    "@slidev/cli": "^52.8.0",
-    "@slidev/types": "^52.8.0"
+    "@slidev/cli": "52.15.2",
+    "@slidev/types": "52.15.2"
   }
 }

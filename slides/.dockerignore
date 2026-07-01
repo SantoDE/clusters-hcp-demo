@@ -1,0 +1,5 @@
+node_modules
+.slidev
+.git
+public/diagrams
+public/qr-slides.svg

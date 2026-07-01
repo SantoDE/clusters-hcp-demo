@@ -15,7 +15,7 @@ layout: default
 <div class="about-grid">
   <div class="about-left">
     <div class="photo-frame">
-      <img :src="'/Manuel_Solingen_g.png'" class="about-photo" />
+      <img :src="$base + 'Manuel_Solingen_g.png'" class="about-photo" />
     </div>
     <div class="about-name">Manuel Zapf</div>
     <div class="about-title">Principal Solution Architect</div>
@@ -185,7 +185,7 @@ layout: default
 
 <figure>
 <div class="h-[380px] overflow-hidden">
-<img :src="'/diagrams/shared-cluster.svg'" class="w-full h-full object-contain" />
+<img :src="$base + 'diagrams/shared-cluster.svg'" class="w-full h-full object-contain" />
 </div>
 <figcaption class="text-center text-sm text-gray-400 border-t border-gray-200 pt-2 mt-2">
 Namespaces per team · RBAC · NetworkPolicies · Resource Quotas
@@ -538,7 +538,7 @@ layout: default
 
 # Demo Architecture
 
-<img :src="'/diagrams/hcp-models.svg'" class="h-4/5 mx-auto" />
+<img :src="$base + 'diagrams/hcp-models.svg'" class="h-4/5 mx-auto" />
 
 <!--
 In production this would typically be a Harvester HCI cluster instead of bare k3s — same KubeVirt foundation, but with proper storage, networking, and a management UI built in.
@@ -629,7 +629,7 @@ class: contact-slide
     </div>
   </div>
   <div class="contact-right">
-    <img :src="'/qr-slides.svg'" class="contact-qr" />
+    <img :src="$base + 'qr-slides.svg'" class="contact-qr" />
     <p class="contact-qr-label">slides.manuelzapf.io/from-clusters-to-controlplanes</p>
   </div>
 </div>
