@@ -1,0 +1,52 @@
+name: Deploy Slides
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'slides/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: slides
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: slides/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build slides
+        run: npm run build -- --base /from-clusters-to-controlplanes/
+
+      - name: Checkout slides repo
+        uses: actions/checkout@v4
+        with:
+          repository: SantoDE/slides
+          token: ${{ secrets.SLIDES_DEPLOY_TOKEN }}
+          ref: gh-pages
+          path: slides-repo
+
+      - name: Copy built files
+        run: |
+          rm -rf ../slides-repo/from-clusters-to-controlplanes
+          cp -r dist ../slides-repo/from-clusters-to-controlplanes
+
+      - name: Push to slides repo
+        working-directory: slides-repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add from-clusters-to-controlplanes
+          git diff --cached --quiet || git commit -m "deploy: from-clusters-to-controlplanes"
+          git push
