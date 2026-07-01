@@ -28,7 +28,7 @@ jobs:
         with:
           repository: SantoDE/slidev-theme-codecentric
           token: ${{ secrets.SLIDES_DEPLOY_TOKEN }}
-          path: slidev-theme-codecentric
+          path: ../slidev-theme-codecentric
 
       - name: Install D2
         run: curl -fsSL https://d2lang.com/install.sh | sh -s --
