@@ -23,6 +23,26 @@ jobs:
           cache: npm
           cache-dependency-path: slides/package-lock.json
 
+      - name: Install D2
+        run: curl -fsSL https://d2lang.com/install.sh | sh -s --
+
+      - name: Generate diagrams
+        run: |
+          for f in diagrams/*.d2; do
+            d2 "$f" "public/diagrams/$(basename "${f%.d2}.svg")"
+          done
+
+      - name: Generate QR code
+        run: |
+          pip install qrcode[svg] --quiet
+          python3 -c "
+          import qrcode, qrcode.image.svg
+          qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_L, box_size=10, border=2)
+          qr.add_data('https://slides.manuelzapf.io/from-clusters-to-controlplanes')
+          qr.make(fit=True)
+          qr.make_image(image_factory=qrcode.image.svg.SvgPathImage).save('public/qr-slides.svg')
+          "
+
       - name: Install dependencies
         run: npm ci
 
