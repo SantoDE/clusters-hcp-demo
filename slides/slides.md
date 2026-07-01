@@ -219,22 +219,19 @@ layout: boxes-green-3
 The challenge isn't Kubernetes — it's *sharing* Kubernetes.
 
 ::box1::
-**Isolation**
-- API access
-- Security boundaries
-- Compliance scope
+## Isolation
+- Cluster-scoped CRDs & RBAC
+- One team's mistake = everyone's blast radius
 
 ::box2::
-**Operations**
-- Independent upgrades
-- Kubernetes versions
-- Backup & restore
+## Operations
+- Upgrade cycles are coupled
+- Backup restores affect all tenants
 
 ::box3::
-**Infrastructure**
-- GPU allocation
-- Networking
-- Storage
+## Infrastructure
+- Node resources compete directly
+- Network & storage boundaries are weak
 
 ---
 layout: centered
@@ -244,6 +241,82 @@ layout: centered
 # …by Creating More Clusters
 
 *Strong isolation comes at the cost of operational complexity.*
+
+---
+layout: default
+---
+
+# Notice Something?
+
+<div class="notice-grid">
+  <div class="notice-col">
+    <div class="notice-year">2018</div>
+    <div class="notice-item app">Application</div>
+    <div class="notice-arrow">↓</div>
+    <div class="notice-item cluster">Cluster</div>
+  </div>
+  <div class="notice-col">
+    <div class="notice-year">2026</div>
+    <div class="notice-item app">Application</div>
+    <div class="notice-arrow">↓</div>
+    <div class="notice-item cluster">Cluster</div>
+    <div class="notice-arrow">↓</div>
+    <div class="notice-item mgmt">Management Cluster</div>
+    <div class="notice-arrow">↓</div>
+    <div class="notice-item hcp">Hosted Control Plane</div>
+    <div class="notice-arrow">↓</div>
+    <div class="notice-item virt">Virtualization <span class="notice-note">(if using VMs)</span></div>
+    <div class="notice-arrow">↓</div>
+    <div class="notice-item metal">Bare Metal</div>
+  </div>
+</div>
+
+<p class="notice-punchline">We're now building Kubernetes platforms that deploy Kubernetes platforms.</p>
+
+<style>
+.notice-grid {
+  display: flex;
+  gap: 6rem;
+  justify-content: center;
+  align-items: flex-start;
+  margin-top: 1rem;
+}
+.notice-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+}
+.notice-year {
+  font-size: 1.3rem;
+  font-weight: 900;
+  margin-bottom: 0.5rem;
+  color: var(--slidev-theme-primary);
+}
+.notice-item {
+  padding: 0.35rem 1.2rem;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-align: center;
+  min-width: 180px;
+}
+.notice-arrow { font-size: 1rem; color: #999; }
+.app    { background: #f0f0f0; }
+.cluster { background: #d0eaf4; }
+.mgmt   { background: #a8d5e8; }
+.hcp    { background: var(--slidev-theme-primary); color: #fff; }
+.virt   { background: #e8e8f4; }
+.metal  { background: #ddd; }
+.notice-note { font-size: 0.7rem; font-weight: 400; opacity: 0.8; }
+.notice-punchline {
+  text-align: center;
+  margin-top: 1.2rem;
+  font-style: italic;
+  font-size: 0.95rem;
+  color: #444;
+}
+</style>
 
 ---
 layout: section-simple
@@ -259,13 +332,81 @@ layout: default
 
 # The Evolution of Isolation
 
-<figure>
-<img :src="'/diagrams/isolation-spectrum.svg'" class="w-full" />
-<figcaption class="flex justify-between text-sm text-gray-400 border-t border-gray-200 pt-2 mt-6">
+<div class="spectrum-row">
+  <div class="spec-item">
+    <div class="spec-box spec-ns">Namespaces</div>
+    <div class="spec-sub">shared cluster</div>
+  </div>
+  <div class="spec-item" v-click>
+    <div class="spec-connector">→</div>
+    <div class="spec-box spec-vc">Virtual Clusters</div>
+    <div class="spec-sub">per-tenant API</div>
+  </div>
+  <div class="spec-item" v-click>
+    <div class="spec-connector">→</div>
+    <div class="spec-box spec-hcp">Hosted Control Planes</div>
+    <div class="spec-sub">CP as Pods</div>
+  </div>
+  <div class="spec-item" v-click>
+    <div class="spec-connector">→</div>
+    <div class="spec-box spec-ded">Dedicated Clusters</div>
+    <div class="spec-sub">full isolation</div>
+  </div>
+</div>
+<div class="spec-legend">
   <span>← lower isolation · lower cost · higher density</span>
   <span>higher isolation · higher cost · lower density →</span>
-</figcaption>
-</figure>
+</div>
+
+<style>
+.spectrum-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0;
+  margin-top: 2rem;
+}
+.spec-item {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+.spec-box {
+  padding: 1rem 1.4rem;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-align: center;
+  min-width: 150px;
+}
+.spec-ns  { background: #e8f4f8; }
+.spec-vc  { background: #d0eaf4; }
+.spec-hcp { background: #a8d5e8; }
+.spec-ded { background: #7bbfd8; }
+.spec-sub {
+  text-align: center;
+  font-size: 0.72rem;
+  color: #777;
+  margin-top: 0.4rem;
+}
+.spec-connector {
+  font-size: 1.5rem;
+  color: #bbb;
+  padding: 0 0.6rem;
+  padding-bottom: 1.2rem;
+}
+.spec-item { flex-direction: column; align-items: center; }
+.spec-item:not(:first-child) { flex-direction: row; align-items: flex-start; }
+.spec-legend {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #aaa;
+  border-top: 1px solid #e0e0e0;
+  margin-top: 2rem;
+  padding-top: 0.5rem;
+}
+</style>
 
 ---
 layout: longtext-left
@@ -313,10 +454,12 @@ class: diagram-slide
 
 ✅ Dedicated control plane per tenant (runs as Pods)  
 ✅ Independent lifecycle — upgrade without coordination  
-✅ Shared worker infrastructure keeps cost down
+✅ Worker pools can be shared or dedicated per tenant
 
 ❌ More complexity than virtual clusters  
-❌ Workers still shared — blast radius remains
+❌ Operational overhead of managing many control planes
+
+> *Control planes become cattle, not pets.*
 
 ---
 layout: longtext-left
@@ -333,7 +476,7 @@ class: diagram-slide
 ✅ GPU exclusivity, compliance, custom networking
 
 ❌ Highest infrastructure cost  
-❌ Highest operational overhead per cluster
+❌ Every cluster becomes a product to operate
 
 ---
 layout: section-simple
@@ -347,14 +490,27 @@ layout: default
 
 # There Is No "Best"
 
-| Model | Isolation | Cost | Density | Best For |
-|---|---|---|---|---|
-| Namespaces | ★☆☆☆☆ | $ | ★★★★★ | Internal teams |
-| Virtual Clusters | ★★★☆☆ | $$ | ★★★★☆ | Dev environments |
-| Hosted Control Planes | ★★★★☆ | $$$ | ★★★☆☆ | SaaS, edge, Scall |
-| Dedicated Clusters | ★★★★★ | $$$$ | ★★☆☆☆ | Regulated, GPU |
+<table class="tradeoff-table">
+  <thead><tr><th>Model</th><th>Isolation</th><th>Cost</th><th>Density</th><th>Best For</th></tr></thead>
+  <tbody>
+    <tr class="row-ns"><td>Namespaces</td><td>★☆☆☆☆</td><td>$</td><td>★★★★★</td><td>Internal teams</td></tr>
+    <tr class="row-vc"><td>Virtual Clusters</td><td>★★★☆☆</td><td>$$</td><td>★★★★☆</td><td>Dev environments</td></tr>
+    <tr class="row-hcp"><td>Hosted Control Planes</td><td>★★★★☆</td><td>$$$</td><td>★★★☆☆</td><td>SaaS, edge</td></tr>
+    <tr class="row-ded"><td>Dedicated Clusters</td><td>★★★★★</td><td>$$$$</td><td>★★☆☆☆</td><td>Regulated, GPU</td></tr>
+  </tbody>
+</table>
 
 *Every model optimizes for a different trade-off.*
+
+<style>
+.tradeoff-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-bottom: 0.75rem; }
+.tradeoff-table th { padding: 0.5rem 0.75rem; text-align: left; border-bottom: 2px solid #ccc; font-weight: 700; }
+.tradeoff-table td { padding: 0.5rem 0.75rem; }
+.row-ns  { background: #e8f4f8; }
+.row-vc  { background: #d0eaf4; }
+.row-hcp { background: #a8d5e8; }
+.row-ded { background: #7bbfd8; }
+</style>
 
 ---
 layout: default
@@ -384,6 +540,10 @@ layout: default
 
 <img :src="'/diagrams/hcp-models.svg'" class="h-4/5 mx-auto" />
 
+<!--
+In production this would typically be a Harvester HCI cluster instead of bare k3s — same KubeVirt foundation, but with proper storage, networking, and a management UI built in.
+-->
+
 ---
 layout: boxes-green-3
 ---
@@ -393,19 +553,19 @@ layout: boxes-green-3
 A single bare-metal k3s cluster running everything.
 
 ::box1::
-**KubeVirt**
+## KubeVirt
 Control plane VM + Worker VMs
-*Dedicated Control Plane + Dedicated Workers*
+*Dedicated CP + Dedicated Workers*
 
 ::box2::
-**Kamaji + KubeVirt**
+## Kamaji + KubeVirt
 Control plane Pods + Worker VMs
-*Hosted Control Plane + Dedicated Workers*
+*Hosted CP + Dedicated Workers*
 
 ::box3::
-**k3k**
+## k3k
 k3s Pods + Shared workers
-*Hosted Control Plane + Shared Workers*
+*Hosted CP + Shared Workers*
 
 ---
 layout: default
@@ -423,7 +583,7 @@ layout: default
 | Best fit | Regulated, GPU, Enterprise | SaaS, multi-tenant | Dev, CI, edge |
 
 ---
-layout: section-simple
+layout: centered
 ---
 
 # It's All About the Control Plane
@@ -438,11 +598,38 @@ layout: default
 - Modern platforms offer a **spectrum of isolation models**
 - The key architectural decision is **where your control plane runs**
 - Different workloads require different trade-offs — **there is no universal best**
-- Platform engineering is increasingly about managing **fleets of control planes**, not individual workloads
+- The future isn't managing clusters — it's managing **fleets of control planes**
 
 ---
-layout: cover
-image: /examples/taskboard_3.jpg
+layout: default
+class: contact-slide
 ---
 
-# Thank You
+<div class="contact-layout">
+  <div class="contact-left">
+    <h1>Thank You</h1>
+    <p class="contact-subtitle">Let's keep the conversation going.</p>
+    <div class="contact-links">
+      <div class="contact-row">
+        <span class="contact-icon">𝕏</span>
+        <span>x.com/manuel_zapf</span>
+      </div>
+      <div class="contact-row">
+        <span class="contact-icon">in</span>
+        <span>linkedin.com/in/manuel-zapf-374a4869</span>
+      </div>
+      <div class="contact-row">
+        <span class="contact-icon">gh</span>
+        <span>github.com/SantoDE</span>
+      </div>
+      <div class="contact-row">
+        <span class="contact-icon">✉</span>
+        <span>manuel.zapf@codecentric.de</span>
+      </div>
+    </div>
+  </div>
+  <div class="contact-right">
+    <img :src="'/qr-slides.svg'" class="contact-qr" />
+    <p class="contact-qr-label">slides.manuelzapf.io/from-clusters-to-controlplanes</p>
+  </div>
+</div>

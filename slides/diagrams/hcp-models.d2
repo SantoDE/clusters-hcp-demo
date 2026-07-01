@@ -2,47 +2,53 @@ direction: down
 
 mgmt: Management Cluster (k3s) {
   style.fill: "#f0f0f0"
+
+  capi: Cluster API {
+    style.fill: "#e0e0e0"
+  }
+  rancher: Rancher + Turtles {
+    style.fill: "#0075a8"
+    style.font-color: "#ffffff"
+  }
 }
 
 kubevirt: KubeVirt {
+  style.fill: "#fdebd0"
   cp_vm: Control Plane VM {
-    style.fill: "#7bbfd8"
+    style.fill: "#f0a060"
   }
   worker_vm: Worker VM(s) {
-    style.fill: "#7bbfd8"
+    style.fill: "#f0a060"
   }
   cp_vm -> worker_vm
 }
 
 kamaji: Kamaji + KubeVirt {
+  style.fill: "#d6eaf8"
   cp_pod: Control Plane Pods {
-    style.fill: "#a8d5e8"
+    style.fill: "#5dade2"
   }
   worker_vm2: Worker VM(s) {
-    style.fill: "#a8d5e8"
+    style.fill: "#5dade2"
   }
   cp_pod -> worker_vm2
 }
 
 k3k: k3k {
+  style.fill: "#d5f5e3"
   cp_pod2: k3s Pods {
-    style.fill: "#d0eaf4"
+    style.fill: "#52be80"
   }
   shared: Shared Workers {
-    style.fill: "#d0eaf4"
+    style.fill: "#52be80"
   }
   cp_pod2 -> shared
 }
 
-mgmt -> kubevirt
-mgmt -> kamaji
-mgmt -> k3k
+mgmt.capi -> kubevirt: provisions
+mgmt.capi -> kamaji: provisions
+mgmt.capi -> k3k: provisions
 
-result: Kubernetes Cluster {
-  shape: rectangle
-  style.fill: "#e8f8e8"
-}
-
-kubevirt -> result
-kamaji -> result
-k3k -> result
+mgmt.rancher -> kubevirt: manages
+mgmt.rancher -> kamaji: manages
+mgmt.rancher -> k3k: manages
