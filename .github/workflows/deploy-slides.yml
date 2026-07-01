@@ -24,11 +24,7 @@ jobs:
           cache-dependency-path: slides/package-lock.json
 
       - name: Checkout theme
-        uses: actions/checkout@v4
-        with:
-          repository: SantoDE/slidev-theme-codecentric
-          token: ${{ secrets.SLIDES_DEPLOY_TOKEN }}
-          path: ../slidev-theme-codecentric
+        run: git clone https://x-access-token:${{ secrets.SLIDES_DEPLOY_TOKEN }}@github.com/SantoDE/slidev-theme-codecentric.git $GITHUB_WORKSPACE/../slidev-theme-codecentric
 
       - name: Install D2
         run: curl -fsSL https://d2lang.com/install.sh | sh -s --
