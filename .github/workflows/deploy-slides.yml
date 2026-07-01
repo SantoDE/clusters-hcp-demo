@@ -1,4 +1,4 @@
-name: Deploy Slides
+name: Trigger Slides Deploy
 
 on:
   push:
@@ -8,68 +8,10 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy:
+  trigger:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: slides
-
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: slides/package-lock.json
-
-      - name: Checkout theme
-        run: git clone https://x-access-token:${{ secrets.SLIDES_DEPLOY_TOKEN }}@github.com/SantoDE/slidev-theme-codecentric.git $GITHUB_WORKSPACE/../slidev-theme-codecentric
-
-      - name: Install D2
-        run: curl -fsSL https://d2lang.com/install.sh | sh -s --
-
-      - name: Generate diagrams
-        run: |
-          for f in diagrams/*.d2; do
-            d2 "$f" "public/diagrams/$(basename "${f%.d2}.svg")"
-          done
-
-      - name: Generate QR code
-        run: |
-          pip install qrcode[svg] --quiet
-          python3 -c "
-          import qrcode, qrcode.image.svg
-          qr = qrcode.QRCode(error_correction=qrcode.constants.ERROR_CORRECT_L, box_size=10, border=2)
-          qr.add_data('https://slides.manuelzapf.io/from-clusters-to-controlplanes')
-          qr.make(fit=True)
-          qr.make_image(image_factory=qrcode.image.svg.SvgPathImage).save('public/qr-slides.svg')
-          "
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build slides
-        run: npm run build -- --base /from-clusters-to-controlplanes/
-
-      - name: Checkout slides repo
-        uses: actions/checkout@v4
-        with:
-          repository: SantoDE/slides
-          token: ${{ secrets.SLIDES_DEPLOY_TOKEN }}
-          ref: gh-pages
-          path: slides-repo
-
-      - name: Copy built files
-        run: |
-          rm -rf ../slides-repo/from-clusters-to-controlplanes
-          cp -r dist ../slides-repo/from-clusters-to-controlplanes
-
-      - name: Push to slides repo
-        working-directory: slides-repo
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add from-clusters-to-controlplanes
-          git diff --cached --quiet || git commit -m "deploy: from-clusters-to-controlplanes"
-          git push
+      - name: Dispatch to slides repo
+        env:
+          GH_TOKEN: ${{ secrets.SLIDES_DEPLOY_TOKEN }}
+        run: gh api repos/SantoDE/slides/dispatches -f event_type=deploy
