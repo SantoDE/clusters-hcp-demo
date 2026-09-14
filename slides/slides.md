@@ -4,8 +4,8 @@ layout: cover
 image: /examples/taskboard_3.jpg
 ---
 
-# From Clusters to Control Planes
-## Rethinking Multi-Tenancy at Scale
+# Vom Cluster zur Plattform
+## Lifecycle, Topology und Multi-Tenancy zusammengedacht
 
 ---
 layout: default
@@ -158,89 +158,89 @@ layout: default
 
 ---
 layout: longtext-left
-image: /Falcon_Heavy_Demo_Mission_(39337245145).jpg
+image: /examples/taskboard_3.jpg
 class: agenda-slide
 ---
 
 # Agenda
 
-1. **The Multi-Tenancy Challenge** — why shared clusters hit limits
-2. **When Clusters Stop Scaling** — the isolation patterns that emerged
-3. **The Evolution of the Control Plane** — a spectrum of models
-4. **Choosing the Right Model** — trade-offs in practice
-5. **Live Demo** — three ways to provision Kubernetes
-6. **Lessons Learned**
+1. **The Cluster Proliferation Problem** — why every requirement becomes a new cluster
+2. **The Wrong Abstraction Level** — clusters as products vs. resources
+3. **HCI as the Foundation** — private cloud built on Hyper-Converged Infrastructure
+4. **Clusters as Platform Resources** — one API, three isolation models
+5. **GitOps + Self-Service** — how teams actually get clusters
+6. **Live Demo**
+7. **Lessons Learned**
 
 ---
 layout: section-simple
 ---
 
-# The Multi-Tenancy Challenge
+# The Cluster Proliferation Problem
 
 ---
 layout: default
 ---
 
-# One Cluster Was Enough…
+# Every New Requirement Becomes a New Cluster
 
-<figure>
-<div class="h-[380px] overflow-hidden">
-<img :src="$base + 'diagrams/shared-cluster.svg'" class="w-full h-full object-contain" />
+<div class="prolif-grid">
+  <div class="prolif-item" v-click>
+    <div class="prolif-icon">🏦</div>
+    <div class="prolif-label">Compliance</div>
+    <div class="prolif-sub">needs dedicated infra</div>
+  </div>
+  <div class="prolif-item" v-click>
+    <div class="prolif-icon">🤖</div>
+    <div class="prolif-label">AI / GPU</div>
+    <div class="prolif-sub">needs exclusive hardware</div>
+  </div>
+  <div class="prolif-item" v-click>
+    <div class="prolif-icon">🏢</div>
+    <div class="prolif-label">New Team</div>
+    <div class="prolif-sub">wants own upgrade cycle</div>
+  </div>
+  <div class="prolif-item" v-click>
+    <div class="prolif-icon">🌍</div>
+    <div class="prolif-label">New Region</div>
+    <div class="prolif-sub">latency & data residency</div>
+  </div>
 </div>
-<figcaption class="text-center text-sm text-gray-400 border-t border-gray-200 pt-2 mt-2">
-Namespaces per team · RBAC · NetworkPolicies · Resource Quotas
-</figcaption>
-</figure>
 
----
-layout: boxes-green-3
----
+<div v-click class="prolif-result">
+  Platform team: provision, configure, secure, upgrade — repeat.
+</div>
 
-# …Until It Wasn't
-
-::box1::
-## 🏦 Compliance
-"I need dedicated infrastructure."
-
-::box2::
-## 🤖 AI & GPUs
-"I need exclusive GPU access."
-
-::box3::
-## 🏢 Enterprise
-"I need my own upgrades. I need more control. I need MOAR"
-
----
-layout: boxes-green-3
----
-
-# What Actually Breaks?
-
-The challenge isn't Kubernetes — it's *sharing* Kubernetes.
-
-::box1::
-## Isolation
-- Cluster-scoped CRDs & RBAC
-- One team's mistake = everyone's blast radius
-
-::box2::
-## Operations
-- Upgrade cycles are coupled
-- Backup restores affect all tenants
-
-::box3::
-## Infrastructure
-- Node resources compete directly
-- Network & storage boundaries are weak
-
----
-layout: centered
----
-
-## We Solved Isolation…
-# …by Creating More Clusters
-
-*Strong isolation comes at the cost of operational complexity.*
+<style>
+.prolif-grid {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin: 2rem 0;
+}
+.prolif-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  background: #f0f0f0;
+  border-radius: 8px;
+  padding: 1.2rem 1.5rem;
+  min-width: 130px;
+}
+.prolif-icon { font-size: 2rem; }
+.prolif-label { font-weight: 700; font-size: 0.95rem; }
+.prolif-sub { font-size: 0.75rem; color: #777; text-align: center; }
+.prolif-result {
+  text-align: center;
+  margin-top: 1.5rem;
+  font-size: 1.1rem;
+  font-style: italic;
+  color: #444;
+  border-top: 1px solid #ddd;
+  padding-top: 1rem;
+}
+</style>
 
 ---
 layout: default
@@ -263,15 +263,15 @@ layout: default
     <div class="notice-arrow">↓</div>
     <div class="notice-item mgmt">Management Cluster</div>
     <div class="notice-arrow">↓</div>
-    <div class="notice-item hcp">Hosted Control Plane</div>
+    <div class="notice-item hcp">Platform Operator</div>
     <div class="notice-arrow">↓</div>
-    <div class="notice-item virt">Virtualization <span class="notice-note">(if using VMs)</span></div>
+    <div class="notice-item virt">Virtualization</div>
     <div class="notice-arrow">↓</div>
     <div class="notice-item metal">Bare Metal</div>
   </div>
 </div>
 
-<p class="notice-punchline">We're now building Kubernetes platforms that deploy Kubernetes platforms.</p>
+<p class="notice-punchline">We're building Kubernetes platforms that deploy Kubernetes platforms.</p>
 
 <style>
 .notice-grid {
@@ -308,7 +308,6 @@ layout: default
 .hcp    { background: var(--slidev-theme-primary); color: #fff; }
 .virt   { background: #e8e8f4; }
 .metal  { background: #ddd; }
-.notice-note { font-size: 0.7rem; font-weight: 400; opacity: 0.8; }
 .notice-punchline {
   text-align: center;
   margin-top: 1.2rem;
@@ -319,44 +318,85 @@ layout: default
 </style>
 
 ---
+layout: centered
+---
+
+## We treat clusters as **products**.
+
+# What if they were **resources**?
+
+*`kubectl apply -f cluster.yaml`*
+
+---
 layout: section-simple
 ---
 
-# The Evolution of the Control Plane
+# HCI as the Foundation
 
-> We no longer deploy applications. We deploy Kubernetes.
+> Hyper-Converged Infrastructure as a standardized private cloud
+
+---
+layout: boxes-green-3
+---
+
+# What Harvester Gives You
+
+A single platform — compute, storage, and networking as Kubernetes resources.
+
+::box1::
+## Compute
+KubeVirt VMs with live migration, resource reservations, and GPU passthrough — provisioned via CRs.
+
+::box2::
+## Storage
+Longhorn distributed block storage. Snapshots, backups, ReadWriteMany — no separate SAN required.
+
+::box3::
+## Networking
+Kube-OVN overlay networks. Per-cluster subnets, NAT, and LoadBalancer IPs — fully programmable.
+
+---
+layout: centered
+---
+
+## Same GitOps tools.
+## Same API.
+# One platform for VMs and Kubernetes.
+
+---
+layout: section-simple
+---
+
+# Clusters as Platform Resources
 
 ---
 layout: default
 ---
 
-# The Evolution of Isolation
+# The Isolation Spectrum
 
 <div class="spectrum-row">
   <div class="spec-item">
-    <div class="spec-box spec-ns">Namespaces</div>
-    <div class="spec-sub">shared cluster</div>
+    <div class="spec-box spec-ns">Virtual Clusters</div>
+    <div class="spec-sub">shared workers</div>
   </div>
   <div class="spec-item" v-click>
     <div class="spec-connector">→</div>
-    <div class="spec-box spec-vc">Virtual Clusters</div>
-    <div class="spec-sub">per-tenant API</div>
-  </div>
-  <div class="spec-item" v-click>
-    <div class="spec-connector">→</div>
-    <div class="spec-box spec-hcp">Hosted Control Planes</div>
-    <div class="spec-sub">CP as Pods</div>
+    <div class="spec-box spec-vc">Hosted Control Planes</div>
+    <div class="spec-sub">dedicated CP + VM workers</div>
   </div>
   <div class="spec-item" v-click>
     <div class="spec-connector">→</div>
     <div class="spec-box spec-ded">Dedicated Clusters</div>
-    <div class="spec-sub">full isolation</div>
+    <div class="spec-sub">full VM isolation</div>
   </div>
 </div>
 <div class="spec-legend">
   <span>← lower isolation · lower cost · higher density</span>
   <span>higher isolation · higher cost · lower density →</span>
 </div>
+
+<div v-click class="spec-punchline">One API shape. The platform decides what runs underneath.</div>
 
 <style>
 .spectrum-row {
@@ -377,11 +417,10 @@ layout: default
   font-weight: 700;
   font-size: 0.95rem;
   text-align: center;
-  min-width: 150px;
+  min-width: 170px;
 }
-.spec-ns  { background: #e8f4f8; }
-.spec-vc  { background: #d0eaf4; }
-.spec-hcp { background: #a8d5e8; }
+.spec-ns  { background: #d0eaf4; }
+.spec-vc  { background: #a8d5e8; }
 .spec-ded { background: #7bbfd8; }
 .spec-sub {
   text-align: center;
@@ -406,124 +445,159 @@ layout: default
   margin-top: 2rem;
   padding-top: 0.5rem;
 }
+.spec-punchline {
+  text-align: center;
+  margin-top: 1.2rem;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--slidev-theme-primary);
+}
 </style>
 
 ---
-layout: longtext-left
-image: /diagrams/namespaces.svg
-class: diagram-slide
+layout: default
 ---
 
-# Namespaces
+# One CRD, Three Isolation Levels
 
-**The classic shared-cluster model**
+<div class="crd-grid">
+<div class="crd-col">
 
-✅ Simple, low cost, excellent density  
-✅ Native Kubernetes primitives (RBAC, NetworkPolicy, Quotas)
+```yaml
+apiVersion: platform.example/v1alpha1
+kind: WorkloadCluster
+metadata:
+  name: team-a
+spec:
+  type: k3k-shared     # virtual cluster
+  apiHost: team-a.platform.example
+  network:
+    vmCIDR: 10.60.10.0/24
+```
 
-❌ Shared API server, etcd, and CRDs  
-❌ Teams upgrade together  
-❌ Blast radius spans the entire cluster
+</div>
+<div class="crd-col">
 
----
-layout: longtext-left
-image: /diagrams/vcluster.svg
-class: diagram-slide
----
+```yaml
+apiVersion: platform.example/v1alpha1
+kind: WorkloadCluster
+metadata:
+  name: team-b
+spec:
+  type: k3k-hcp        # hosted control plane + VMs
+  apiHost: team-b.platform.example
+  workers:
+    count: 2
+  network:
+    vmCIDR: 10.60.11.0/24
+```
 
-# Virtual Clusters
+</div>
+<div class="crd-col">
 
-**e.g. k3k · vCluster**
+```yaml
+apiVersion: platform.example/v1alpha1
+kind: WorkloadCluster
+metadata:
+  name: prod-gpu
+spec:
+  type: rke2-vm        # fully dedicated cluster
+  apiHost: prod.platform.example
+  workers:
+    count: 3
+  network:
+    vmCIDR: 10.60.12.0/24
+```
 
-✅ Separate Kubernetes API per tenant  
-✅ Fast provisioning  
-✅ Great for development and SaaS
+</div>
+</div>
 
-❌ Workloads still share worker nodes  
-❌ Weaker isolation than a dedicated control plane
-
----
-layout: longtext-left
-image: /diagrams/hosted-cp.svg
-class: diagram-slide
----
-
-# Hosted Control Planes
-
-**e.g. Kamaji · HyperShift**
-
-✅ Dedicated control plane per tenant (runs as Pods)  
-✅ Independent lifecycle — upgrade without coordination  
-✅ Worker pools can be shared or dedicated per tenant
-
-❌ More complexity than virtual clusters  
-❌ Operational overhead of managing many control planes
-
-> *Control planes become cattle, not pets.*
-
----
-layout: longtext-left
-image: /diagrams/dedicated.svg
-class: diagram-slide
----
-
-# Dedicated Clusters
-
-**e.g. Cloud Managed · Bare Metal**
-
-✅ Complete isolation — control plane and workers  
-✅ Full lifecycle independence  
-✅ GPU exclusivity, compliance, custom networking
-
-❌ Highest infrastructure cost  
-❌ Every cluster becomes a product to operate
+<style>
+.crd-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+.crd-col {
+  font-size: 0.72rem;
+}
+.crd-col :deep(pre) {
+  font-size: 0.72rem !important;
+  margin: 0;
+}
+</style>
 
 ---
 layout: section-simple
 ---
 
-# Choosing the Right Model
+# GitOps + Self-Service
 
 ---
 layout: default
 ---
 
-# There Is No "Best"
+# From Git Commit to Running Cluster
 
-<table class="tradeoff-table">
-  <thead><tr><th>Model</th><th>Isolation</th><th>Cost</th><th>Density</th><th>Best For</th></tr></thead>
-  <tbody>
-    <tr class="row-ns"><td>Namespaces</td><td>★☆☆☆☆</td><td>$</td><td>★★★★★</td><td>Internal teams</td></tr>
-    <tr class="row-vc"><td>Virtual Clusters</td><td>★★★☆☆</td><td>$$</td><td>★★★★☆</td><td>Dev environments</td></tr>
-    <tr class="row-hcp"><td>Hosted Control Planes</td><td>★★★★☆</td><td>$$$</td><td>★★★☆☆</td><td>SaaS, edge</td></tr>
-    <tr class="row-ded"><td>Dedicated Clusters</td><td>★★★★★</td><td>$$$$</td><td>★★☆☆☆</td><td>Regulated, GPU</td></tr>
-  </tbody>
-</table>
+<div class="gitops-flow">
+  <div class="gitops-step" v-click>
+    <div class="gitops-icon">📝</div>
+    <div class="gitops-label">Developer commits<br/><code>cluster.yaml</code> to Git</div>
+  </div>
+  <div class="gitops-arrow" v-click>→</div>
+  <div class="gitops-step" v-click>
+    <div class="gitops-icon">🚢</div>
+    <div class="gitops-label">Fleet syncs<br/>WorkloadCluster CR</div>
+  </div>
+  <div class="gitops-arrow" v-click>→</div>
+  <div class="gitops-step" v-click>
+    <div class="gitops-icon">⚙️</div>
+    <div class="gitops-label">Operator provisions<br/>on Harvester</div>
+  </div>
+  <div class="gitops-arrow" v-click>→</div>
+  <div class="gitops-step" v-click>
+    <div class="gitops-icon">✅</div>
+    <div class="gitops-label">Cluster appears<br/>in Rancher</div>
+  </div>
+</div>
 
-*Every model optimizes for a different trade-off.*
+<div v-click class="gitops-note">
+  Platform team reviews a PR. No ticket system. No manual provisioning. No dual kubectl contexts.
+</div>
 
 <style>
-.tradeoff-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-bottom: 0.75rem; }
-.tradeoff-table th { padding: 0.5rem 0.75rem; text-align: left; border-bottom: 2px solid #ccc; font-weight: 700; }
-.tradeoff-table td { padding: 0.5rem 0.75rem; }
-.row-ns  { background: #e8f4f8; }
-.row-vc  { background: #d0eaf4; }
-.row-hcp { background: #a8d5e8; }
-.row-ded { background: #7bbfd8; }
+.gitops-flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin: 3rem 0 2rem;
+}
+.gitops-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  background: #f0f0f0;
+  border-radius: 8px;
+  padding: 1.2rem 1rem;
+  min-width: 130px;
+  text-align: center;
+}
+.gitops-icon { font-size: 2rem; }
+.gitops-label { font-size: 0.8rem; line-height: 1.4; }
+.gitops-label code { font-size: 0.75rem; background: #e0e0e0; padding: 0.1rem 0.3rem; border-radius: 3px; }
+.gitops-arrow { font-size: 1.8rem; color: var(--slidev-theme-primary); font-weight: 700; }
+.gitops-note {
+  text-align: center;
+  font-style: italic;
+  font-size: 0.9rem;
+  color: #555;
+  border-top: 1px solid #ddd;
+  padding-top: 1rem;
+}
 </style>
-
----
-layout: default
----
-
-# Choosing Your Control Plane Model
-
-| Requirement | Model | Examples |
-|---|---|---|
-| Internal teams, cost-sensitive | Namespaces | Native Kubernetes |
-| Developer & CI environments | Virtual Clusters | vCluster, k3k |
-| SaaS, multi-tenant platforms & Scale| Hosted Control Planes | Kamaji, k3k, HyperShift |
-| Regulated workloads, GPU, compliance | Dedicated Clusters | Any infra provider |
 
 ---
 layout: cover
@@ -536,57 +610,88 @@ image: /examples/write_sticker_1.jpg
 layout: default
 ---
 
-# Demo Architecture
+# What We'll See
 
-<img :src="$base + 'diagrams/hcp-models.svg'" class="h-4/5 mx-auto" />
+<div class="demo-stack">
+  <div class="demo-layer demo-git">
+    <strong>Git</strong> — WorkloadCluster manifests in <code>fleet/clusters/demo/</code>
+  </div>
+  <div class="demo-arrow">↓ Fleet syncs</div>
+  <div class="demo-layer demo-op">
+    <strong>Operator</strong> — reconciles WorkloadCluster CRs on the management cluster
+  </div>
+  <div class="demo-arrow">↓ provisions</div>
+  <div class="demo-layer demo-clusters">
+    <div class="demo-cluster demo-shared"><strong>k3k-shared</strong><br/><span>virtual cluster</span></div>
+    <div class="demo-cluster demo-hcp"><strong>k3k-hcp</strong><br/><span>hosted CP + VM</span></div>
+    <div class="demo-cluster demo-rke2"><strong>rke2-vm</strong><br/><span>dedicated cluster</span></div>
+  </div>
+  <div class="demo-arrow">↓ running on</div>
+  <div class="demo-layer demo-harvester">
+    <strong>Harvester</strong> — VMs, OVN overlay networks, Longhorn storage
+  </div>
+</div>
 
-<!--
-In production this would typically be a Harvester HCI cluster instead of bare k3s — same KubeVirt foundation, but with proper storage, networking, and a management UI built in.
--->
+<style>
+.demo-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 1rem;
+}
+.demo-layer {
+  width: 75%;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  text-align: center;
+}
+.demo-layer code { background: rgba(0,0,0,0.08); padding: 0.1rem 0.3rem; border-radius: 3px; font-size: 0.8rem; }
+.demo-git       { background: #e8f4f8; }
+.demo-op        { background: #d0eaf4; }
+.demo-clusters  { display: flex; gap: 1rem; width: 75%; justify-content: center; }
+.demo-cluster   { padding: 0.6rem 1rem; border-radius: 6px; text-align: center; font-size: 0.8rem; flex: 1; }
+.demo-cluster span { font-size: 0.7rem; color: #666; }
+.demo-shared    { background: #d0eaf4; }
+.demo-hcp       { background: #a8d5e8; }
+.demo-rke2      { background: #7bbfd8; color: #fff; }
+.demo-rke2 span { color: #e0f0f8; }
+.demo-harvester { background: #333; color: #fff; }
+.demo-arrow     { font-size: 0.85rem; color: #999; }
+</style>
 
 ---
-layout: boxes-green-3
+layout: section-simple
 ---
 
-# One Management Cluster, Three Models
-
-A single bare-metal k3s cluster running everything.
-
-::box1::
-## KubeVirt
-Control plane VM + Worker VMs
-*Dedicated CP + Dedicated Workers*
-
-::box2::
-## Kamaji + KubeVirt
-Control plane Pods + Worker VMs
-*Hosted CP + Dedicated Workers*
-
-::box3::
-## k3k
-k3s Pods + Shared workers
-*Hosted CP + Shared Workers*
+# Lessons Learned
 
 ---
 layout: default
 ---
 
-# Comparing the Models
+# There Is No "Best" Model
 
-| | KubeVirt | Kamaji + KubeVirt | k3k |
-|---|---|---|---|
-| Control Plane | VM | Pods | Pods |
-| Workers | VM | VM | Shared |
-| Isolation | ★★★★★ | ★★★★☆ | ★★☆☆☆ |
-| Density | ★★☆☆☆ | ★★★★☆ | ★★★★★ |
-| Startup time | Slowest | Fast | Fastest |
-| Best fit | Regulated, GPU, Enterprise | SaaS, multi-tenant | Dev, CI, edge |
+<table class="tradeoff-table">
+  <thead><tr><th>Model</th><th>Isolation</th><th>Cost</th><th>Density</th><th>Best For</th></tr></thead>
+  <tbody>
+    <tr class="row-vc"><td>k3k-shared (virtual cluster)</td><td>★★☆☆☆</td><td>$</td><td>★★★★★</td><td>Dev, CI, short-lived</td></tr>
+    <tr class="row-hcp"><td>k3k-hcp (hosted CP + VMs)</td><td>★★★★☆</td><td>$$$</td><td>★★★☆☆</td><td>Teams, SaaS tenants</td></tr>
+    <tr class="row-ded"><td>rke2-vm (dedicated)</td><td>★★★★★</td><td>$$$$</td><td>★★☆☆☆</td><td>Regulated, GPU, prod</td></tr>
+  </tbody>
+</table>
 
----
-layout: centered
----
+*One operator, one CRD, one Git workflow — for all three.*
 
-# It's All About the Control Plane
+<style>
+.tradeoff-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin-bottom: 0.75rem; }
+.tradeoff-table th { padding: 0.5rem 0.75rem; text-align: left; border-bottom: 2px solid #ccc; font-weight: 700; }
+.tradeoff-table td { padding: 0.5rem 0.75rem; }
+.row-vc  { background: #d0eaf4; }
+.row-hcp { background: #a8d5e8; }
+.row-ded { background: #7bbfd8; }
+</style>
 
 ---
 layout: default
@@ -594,11 +699,11 @@ layout: default
 
 # Takeaways
 
-- Multi-tenancy is no longer a binary choice between namespaces and clusters
-- Modern platforms offer a **spectrum of isolation models**
-- The key architectural decision is **where your control plane runs**
-- Different workloads require different trade-offs — **there is no universal best**
-- The future isn't managing clusters — it's managing **fleets of control planes**
+- **HCI gives you the primitives** — VMs, networking, storage as Kubernetes resources; no proprietary cloud APIs
+- **Treat clusters as resources**, not products — a CRD and an operator replace your provisioning runbook
+- **GitOps is your self-service layer** — developers open PRs, platform teams review; no ticket system, no waiting
+- **The isolation model is a runtime decision** — same YAML shape, different `type` field, different infrastructure
+- **Rancher + Fleet + Harvester + k3k = a coherent private cloud stack** — all open source, all GitOps-native
 
 ---
 layout: default
