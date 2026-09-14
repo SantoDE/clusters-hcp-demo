@@ -18,10 +18,9 @@ layout: default
       <img :src="$base + 'Manuel_Solingen_g.png'" class="about-photo" />
     </div>
     <div class="about-name">Manuel Zapf</div>
-    <div class="about-title">Principal Solution Architect</div>
+    <div class="about-title">Team Lead Private Cloud Solutions @ codecentric cloud</div>
     <ul class="about-bio">
       <li>Traefik Maintainer</li>
-      <li>Dapr Meteor</li>
       <li>Proud dad</li>
       <li>A bit too much into Handball</li>
       <li>Previously: Traefik Labs, Solo.io</li>
@@ -200,11 +199,6 @@ layout: default
     <div class="prolif-label">New Team</div>
     <div class="prolif-sub">wants own upgrade cycle</div>
   </div>
-  <div class="prolif-item" v-click>
-    <div class="prolif-icon">🌍</div>
-    <div class="prolif-label">New Region</div>
-    <div class="prolif-sub">latency & data residency</div>
-  </div>
 </div>
 
 <div v-click class="prolif-result">
@@ -341,7 +335,7 @@ layout: boxes-green-3
 
 # What Harvester Gives You
 
-A single platform — compute, storage, and networking as Kubernetes resources.
+*Harvester — open-source HCI built on KubeVirt, Longhorn, and Kube-OVN*
 
 ::box1::
 ## Compute
@@ -464,51 +458,54 @@ layout: default
 <div class="crd-col">
 
 ```yaml
-apiVersion: platform.example/v1alpha1
+apiVersion: platform.codecentric.cloud/v1alpha1
 kind: WorkloadCluster
 metadata:
   name: team-a
 spec:
-  type: k3k-shared     # virtual cluster
-  apiHost: team-a.platform.example
+  type: k3k-shared
+  apiHost: team-a.example.com
   network:
     vmCIDR: 10.60.10.0/24
 ```
 
+<div class="crd-badge badge-shared">virtual cluster · shared workers</div>
 </div>
 <div class="crd-col">
 
 ```yaml
-apiVersion: platform.example/v1alpha1
+apiVersion: platform.codecentric.cloud/v1alpha1
 kind: WorkloadCluster
 metadata:
   name: team-b
 spec:
-  type: k3k-hcp        # hosted control plane + VMs
-  apiHost: team-b.platform.example
+  type: k3k-hcp
+  apiHost: team-b.example.com
   workers:
     count: 2
   network:
     vmCIDR: 10.60.11.0/24
 ```
 
+<div class="crd-badge badge-hcp">hosted CP · dedicated VMs</div>
 </div>
 <div class="crd-col">
 
 ```yaml
-apiVersion: platform.example/v1alpha1
+apiVersion: platform.codecentric.cloud/v1alpha1
 kind: WorkloadCluster
 metadata:
   name: prod-gpu
 spec:
-  type: rke2-vm        # fully dedicated cluster
-  apiHost: prod.platform.example
+  type: rke2-vm
+  apiHost: prod.example.com
   workers:
     count: 3
   network:
     vmCIDR: 10.60.12.0/24
 ```
 
+<div class="crd-badge badge-rke2">fully dedicated cluster</div>
 </div>
 </div>
 
@@ -516,16 +513,24 @@ spec:
 .crd-grid {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  gap: 1rem;
+  gap: 0.75rem;
   margin-top: 0.5rem;
 }
-.crd-col {
-  font-size: 0.72rem;
-}
 .crd-col :deep(pre) {
-  font-size: 0.72rem !important;
-  margin: 0;
+  font-size: 0.58rem !important;
+  margin: 0 0 0.4rem;
+  line-height: 1.4;
 }
+.crd-badge {
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+.badge-shared { background: #d0eaf4; }
+.badge-hcp    { background: #a8d5e8; }
+.badge-rke2   { background: #7bbfd8; color: #fff; }
 </style>
 
 ---
@@ -729,12 +734,9 @@ class: contact-slide
       </div>
       <div class="contact-row">
         <span class="contact-icon">✉</span>
-        <span>manuel.zapf@codecentric.de</span>
+        <span>manuel.zapf@codecentric.cloud</span>
       </div>
     </div>
   </div>
-  <div class="contact-right">
-    <img :src="$base + 'qr-slides.svg'" class="contact-qr" />
-    <p class="contact-qr-label">slides.manuelzapf.io/from-clusters-to-controlplanes</p>
-  </div>
+  
 </div>
