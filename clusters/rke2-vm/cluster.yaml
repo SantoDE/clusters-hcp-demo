@@ -1,14 +1,14 @@
 apiVersion: platform.codecentric.cloud/v1alpha1
 kind: WorkloadCluster
 metadata:
-  name: demo-rke2
+  name: workload-dev
   namespace: platform-operator
 spec:
   type: rke2-vm
-  targetNamespace: demo-rke2
+  targetNamespace: workload-dev
   harvesterProviderRef:
     name: harvester-dev
-  apiHost: demo-rke2.entwicklerautobahn.io
+  apiHost: workload-dev.entwicklerautobahn.io
   network:
     vmCIDR: 10.70.0.0/24
     vmGateway: 10.70.0.1
@@ -16,18 +16,25 @@ spec:
     cloudCredentialSecretName: cattle-global-data:cc-h92kl
     kubernetesVersion: v1.36.5+rke2r1
     clusterType: workload
+    nodes:
+      count: 3
+    fixedRegistrationAddress: 51.89.57.84
     vm:
       cpuCount: "4"
       memorySize: "8"
       diskSize: 40
+      diskImage: harvester-public/sl-micro-6-2-updated-20261109
+      sshUser: opensuse
     publicBridge:
       enabled: true
       nodeIPs:
+        - 51.89.57.88/28
         - 51.89.57.89/28
+        - 51.89.57.90/28
       gateway: 51.89.57.94
     loadBalancer:
       enabled: true
       subnet: 51.89.57.80/28
       gateway: 51.89.57.94
-      rangeStart: 51.89.57.92
-      rangeEnd: 51.89.57.92
+      rangeStart: 51.89.57.83
+      rangeEnd: 51.89.57.83

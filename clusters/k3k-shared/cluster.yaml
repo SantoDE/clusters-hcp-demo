@@ -7,9 +7,9 @@ spec:
   type: k3k-shared
   targetNamespace: demo-shared
   hostClusterRef:
-    name: demo-rke2
+    name: workload-dev
     credentialSecretRef:
-      name: demo-rke2-kubeconfig
+      name: workload-dev-kubeconfig
       namespace: fleet-default
       key: value
   harvesterProviderRef:
