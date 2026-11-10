@@ -1,0 +1,20 @@
+apiVersion: platform.codecentric.cloud/v1alpha1
+kind: WorkloadCluster
+metadata:
+  name: demo-shared
+  namespace: platform-operator
+spec:
+  type: k3k-shared
+  targetNamespace: demo-shared
+  hostClusterRef:
+    name: demo-rke2
+    credentialSecretRef:
+      name: demo-rke2-kubeconfig
+      namespace: fleet-default
+      key: value
+  harvesterProviderRef:
+    name: harvester-dev
+  apiHost: demo-shared.entwicklerautobahn.io
+  network:
+    vmCIDR: 10.71.0.0/24
+    vmGateway: 10.71.0.1
