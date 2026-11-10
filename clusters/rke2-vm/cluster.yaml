@@ -18,7 +18,7 @@ spec:
     clusterType: workload
     nodes:
       count: 3
-    fixedRegistrationAddress: 51.89.57.84
+    fixedRegistrationAddress: 51.89.57.92
     vm:
       cpuCount: "4"
       memorySize: "8"
@@ -36,5 +36,5 @@ spec:
       enabled: true
       subnet: 51.89.57.80/28
       gateway: 51.89.57.94
-      rangeStart: 51.89.57.83
-      rangeEnd: 51.89.57.83
+      rangeStart: 51.89.57.93
+      rangeEnd: 51.89.57.93
